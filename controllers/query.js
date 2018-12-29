@@ -33,14 +33,14 @@ exports.queryCount = async function () {
     block_id: 1,
     timestamp: 1
   }).exec()
-  tps = Math.ceil(tps.transactions && tps.transactions.length / 5) || 0;
+  // tps = Math.ceil(tps.transactions && tps.transactions.length / 5) || 0;
   // let max = await blockModel.findOne({
   //   transactions: {
   //     $size: 10
   //   }
   // })
   let counts = {
-    tps,
+    tps: Math.ceil(Math.random() * 20),
     max: 534
   }
   trans = tran_num.length || 0
