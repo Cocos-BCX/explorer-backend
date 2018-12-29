@@ -11,53 +11,57 @@ const EventEmitter = require('events').EventEmitter
 //监听区块信息
 
 exports.subscribeToBlocks = async function (ctx, next) {
-    // ctx.locked = false
-    bcx.subscribeToBlocks({
+    ctx.locked = false
+    let block_height = await bcx.subscribeToBlocks({
         callback: async result => {
             if (result.data) {
-                ctx.block_height = result.data.block_height
-                let detail = await BlockDetailModel.findOne({
-                    detail: 'detail'
-                })
-                if (!detail) {
-                    let blocks = await blockModel
-                        .aggregate([{
-                            $group: {
-                                _id: 'block_height',
-                                max_value: {
-                                    $max: '$block_height'
-                                }
-                            }
-                        }])
-                        .exec()
-                    let block_detail = new BlockDetailModel({
-                        block_height: blocks && blocks[0] && blocks[0].max_value || 0,
-                        detail: 'detail'
-                    });
-                    await block_detail.save();
-                } else {
-                    let blocks = await BlockDetailModel.findOne({
-                        detail: 'detail'
-                    });
-                    if (!blocks) {
-                        ctx.blcok_length = 0
-                    } else {
-                        ctx.blcok_length = blocks.block_height;
-                    }
-                }
-                if (ctx.blcok_length < ctx.block_height) {
-                    await BlockDetailModel.findOneAndUpdate({
-                        detail: 'detail'
-                    }, {
-                        block_height: ctx.blcok_length + 1
-                    })
-                    exports.Block(ctx, next, ctx.blcok_length + 1)
-                } else {
-                    return;
-                }
+                return result.data.block_height
             }
         }
     })
+    ctx.block_height = 880088;
+    if (ctx.block_height) {
+        let detail = await BlockDetailModel.findOne({
+            detail: 'detail'
+        })
+        if (!detail) {
+            let blocks = await blockModel
+                .aggregate([{
+                    $group: {
+                        _id: 'block_height',
+                        max_value: {
+                            $max: '$block_height'
+                        }
+                    }
+                }])
+                .exec()
+            let block_detail = new BlockDetailModel({
+                block_height: blocks && blocks[0] && blocks[0].max_value || 0,
+                detail: 'detail'
+            });
+            await block_detail.save();
+        } else {
+            let blocks = await BlockDetailModel.findOne({
+                detail: 'detail'
+            });
+            if (!blocks) {
+                ctx.blcok_length = 0
+            } else {
+                ctx.blcok_length = blocks.block_height;
+            }
+            if (ctx.blcok_length < ctx.block_height) {
+                for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
+                    await BlockDetailModel.findOneAndUpdate({
+                        detail: 'detail'
+                    }, {
+                        block_height: i + 1
+                    })
+                    await exports.Block(ctx, next, 1 + i)
+                }
+            }
+        }
+
+    }
 }
 
 //入库block区块
@@ -127,102 +131,102 @@ async function failBlock(ctx, next, i) {
 
 //保存数据
 async function saveData(result, ctx, next, i) {
-    let block = await blockModel
-        .findOne({
-            block_height: result.data && result.data.block_height
-        })
-        .hint({
-            block_height: 1,
-            block_id: 1,
-            timestamp: 1
-        })
-        .exec()
-    if (!block) {
-        //查询交易
-        await BlockDetailModel.findOneAndUpdate({
-            detail: 'detail'
-        }, {
-            block_height: i + 1
-        })
-        exports.Block(ctx, next, i + 1)
-        let transactions = [],
-            trx_ids = []
-        if (
-            result.data &&
-            result.data.transactions &&
-            result.data.transactions.length
-        ) {
-            result.data.transactions.forEach(async item => {
-                transactions.push({
-                    trx_id: item.trx_id
-                })
-                item.block = i
-                let trans = new transModel(item)
-                await trans.save()
-                //交易去重
-                await query.subscribeToTrans(ctx, next)
-                if (item.parse_ops && item.parse_ops.length) {
-                    ctx.trx_id = trans.trx_id
-                    item.parse_ops.forEach(async option => {
-                        let users = []
-                        let parse_ops = option && option.parse_operations
-                        //新建账户
-                        if (option.type === 'account_create') {
-                            users = [{
-                                id: parse_ops.new_account,
-                                type: 'account_create'
-                            }]
-                            ctx.users = users
-                            //用户创建时间
-                            ctx.create_time = item.expiration
-                            await exports.setUser(ctx, next)
-                        }
-                        //交易
-                        if (option.type === 'transfer') {
-                            // users = [...new Set([parse_ops.from || '', parse_ops.to || ''])].filter(Boolean);
-                            if (parse_ops.from) {
-                                users.push({
-                                    id: parse_ops.from,
-                                    type: 'transfer_from'
-                                })
-                            }
-                            if (parse_ops.to) {
-                                users.push({
-                                    id: parse_ops.to,
-                                    type: 'transfer_to'
-                                })
-                            }
-                            option.trx_id = trans.trx_id
-                            let transfer = new transferModel(option)
-                            await transfer.save()
-                            //转账去重
-                            await query.subscribeToTransfer(ctx, next)
-                            ctx.users = users
-                            await exports.setUser(ctx, next)
-                        }
-                    })
-                }
+    // let block = await blockModel
+    //     .findOne({
+    //         block_height: result.data && result.data.block_height
+    //     })
+    //     .hint({
+    //         block_height: 1,
+    //         block_id: 1,
+    //         timestamp: 1
+    //     })
+    //     .exec()
+    // if (!block) {
+    //查询交易
+    // await BlockDetailModel.findOneAndUpdate({
+    //     detail: 'detail'
+    // }, {
+    //     block_height: i + 1
+    // })
+    // exports.Block(ctx, next, i + 1)
+    let transactions = [],
+        trx_ids = []
+    if (
+        result.data &&
+        result.data.transactions &&
+        result.data.transactions.length
+    ) {
+        result.data.transactions.forEach(async item => {
+            transactions.push({
+                trx_id: item.trx_id
             })
-        }
-        if (result.data) {
-            result.data.transactions = transactions || []
-            transactions = []
-            if (result.data.witness) {
-                ctx.users = [{
-                    id: result.data.witness,
-                    type: 'witness'
-                }]
-                await exports.setUser(ctx, next)
+            item.block = i
+            let trans = new transModel(item)
+            await trans.save()
+            //交易去重
+            await query.subscribeToTrans(ctx, next)
+            if (item.parse_ops && item.parse_ops.length) {
+                ctx.trx_id = trans.trx_id
+                item.parse_ops.forEach(async option => {
+                    let users = []
+                    let parse_ops = option && option.parse_operations
+                    //新建账户
+                    if (option.type === 'account_create') {
+                        users = [{
+                            id: parse_ops.new_account,
+                            type: 'account_create'
+                        }]
+                        ctx.users = users
+                        //用户创建时间
+                        ctx.create_time = item.expiration
+                        await exports.setUser(ctx, next)
+                    }
+                    //交易
+                    if (option.type === 'transfer') {
+                        // users = [...new Set([parse_ops.from || '', parse_ops.to || ''])].filter(Boolean);
+                        if (parse_ops.from) {
+                            users.push({
+                                id: parse_ops.from,
+                                type: 'transfer_from'
+                            })
+                        }
+                        if (parse_ops.to) {
+                            users.push({
+                                id: parse_ops.to,
+                                type: 'transfer_to'
+                            })
+                        }
+                        option.trx_id = trans.trx_id
+                        let transfer = new transferModel(option)
+                        await transfer.save()
+                        //转账去重
+                        await query.subscribeToTransfer(ctx, next)
+                        ctx.users = users
+                        await exports.setUser(ctx, next)
+                    }
+                })
             }
-            const block = new blockModel(result.data)
-            await block.save()
-            //区块去重
-            // await query.subscribeToBlocks(ctx, next)
-        } else {
-            exports.failBlock(ctx, next, i)
+        })
+    }
+    if (result.data) {
+        result.data.transactions = transactions || []
+        transactions = []
+        if (result.data.witness) {
+            ctx.users = [{
+                id: result.data.witness,
+                type: 'witness'
+            }]
+            await exports.setUser(ctx, next)
         }
+        const block = new blockModel(result.data)
+        await block.save()
+        //区块去重
+        // await query.subscribeToBlocks(ctx, next)
+    } else {
+        exports.failBlock(ctx, next, i)
     }
 }
+// }
 
 //用户表
 exports.setUser = async function (ctx, next) {
