@@ -44,14 +44,12 @@ exports.subscribeToBlocks = async function (ctx, next) {
             let blocks = await BlockDetailModel.findOne({
                 detail: 'detail'
             });
-            console.log('-------aaa------' + blocks.block_height);
             if (!blocks) {
                 ctx.blcok_length = 0
             } else {
                 ctx.blcok_length = blocks.block_height;
             }
             if (ctx.blcok_length < ctx.block_height) {
-                console.log('-------bb------' + blocks.block_height);
                 for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
                     await BlockDetailModel.findOneAndUpdate({
                         detail: 'detail'
@@ -211,15 +209,15 @@ async function saveData(result, ctx, next, i) {
         })
     }
     if (result.data) {
-        result.data.transactions = transactions || []
-        transactions = []
-        if (result.data.witness) {
-            ctx.users = [{
-                id: result.data.witness,
-                type: 'witness'
-            }]
-            await exports.setUser(ctx, next)
-        }
+        // result.data.transactions = transactions || []
+        // transactions = []
+        // if (result.data.witness) {
+        //     ctx.users = [{
+        //         id: result.data.witness,
+        //         type: 'witness'
+        //     }]
+        //     await exports.setUser(ctx, next)
+        // }
         const block = new blockModel(result.data)
         await block.save()
         //区块去重
@@ -233,6 +231,7 @@ async function saveData(result, ctx, next, i) {
 //用户表
 exports.setUser = async function (ctx, next) {
     await ctx.users.map(async (item, index) => {
+        console.log(item.id);
         let user = await UserModel.findOne({
             user_name: item.id
         }).exec()
@@ -240,7 +239,9 @@ exports.setUser = async function (ctx, next) {
             await bcx.queryUserInfo({
                 account: item.id,
                 callback: async result => {
-                    if (result.locked || !result.data || !result.data.account) {} else {
+                    if (result.locked || !result.data || !result.data.account) {
+
+                    } else {
                         //用户名作索引用
                         result.data.user_name = result.data.account.name
                         result.data.trx_ids = [{
