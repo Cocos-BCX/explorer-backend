@@ -1,0 +1,42 @@
+{
+  "name": "explorer-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node bin/www",
+    "dev": "pm2 start ecosystem.config.js --only release --watch",
+    "prod": "pm2 start ecosystem.config.js --only source --watch",
+    "test": "pm2 start ecosystem.config.js --only testing --watch"
+  },
+  "dependencies": {
+    "bcl": "^1.0.0",
+    "constants": "0.0.2",
+    "debug": "^2.6.3",
+    "forever": "^0.15.3",
+    "koa": "^2.2.0",
+    "koa-bodyparser": "^3.2.0",
+    "koa-convert": "^1.2.0",
+    "koa-cors": "0.0.16",
+    "koa-json": "^2.0.2",
+    "koa-logger": "^2.0.1",
+    "koa-onerror": "^1.2.1",
+    "koa-router": "^7.1.1",
+    "koa-socket": "^4.4.0",
+    "koa-static": "^3.0.0",
+    "koa-views": "^5.2.1",
+    "koa2": "^2.0.0-alpha.7",
+    "koa2-cors": "^2.0.6",
+    "lodash": "^4.17.11",
+    "moment": "^2.23.0",
+    "mongoose": "^5.3.16",
+    "monk": "^6.0.6",
+    "pm2": "^3.2.3",
+    "pug": "^2.0.0-rc.1",
+    "save": "^2.3.3",
+    "socket.io": "^2.2.0",
+    "websocket": "^1.0.28"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.8"
+  }
+}
