@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node bin/www",
-    "dev": "pm2 start ecosystem.config.js --only release --watch",
+    "dev": "pm2 start ecosystem.config.js --only released --watch",
     "prod": "pm2 start ecosystem.config.js --only source --watch",
     "test": "pm2 start ecosystem.config.js --only testing --watch"
   },

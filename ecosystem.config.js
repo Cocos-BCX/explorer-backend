@@ -20,10 +20,10 @@ module.exports = {
     }
   }, {
     // 预发布环境
-    name: "release",
+    name: "released",
     script: "./app.js",
     env: {
-      "NODE_ENV": "release",
+      "NODE_ENV": "released",
       "PORT": 5001
     }
   }]
