@@ -44,12 +44,14 @@ exports.subscribeToBlocks = async function (ctx, next) {
             let blocks = await BlockDetailModel.findOne({
                 detail: 'detail'
             });
+            console.log('-------aaa------' + blocks.block_height);
             if (!blocks) {
                 ctx.blcok_length = 0
             } else {
                 ctx.blcok_length = blocks.block_height;
             }
             if (ctx.blcok_length < ctx.block_height) {
+                console.log('-------bb------' + blocks.block_height);
                 for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
                     await BlockDetailModel.findOneAndUpdate({
                         detail: 'detail'
@@ -164,7 +166,7 @@ async function saveData(result, ctx, next, i) {
             let trans = new transModel(item)
             await trans.save()
             //交易去重
-            await query.subscribeToTrans(ctx, next)
+            // await query.subscribeToTrans(ctx, next)
             if (item.parse_ops && item.parse_ops.length) {
                 ctx.trx_id = trans.trx_id
                 item.parse_ops.forEach(async option => {
@@ -200,7 +202,7 @@ async function saveData(result, ctx, next, i) {
                         let transfer = new transferModel(option)
                         await transfer.save()
                         //转账去重
-                        await query.subscribeToTransfer(ctx, next)
+                        // await query.subscribeToTransfer(ctx, next)
                         ctx.users = users
                         await exports.setUser(ctx, next)
                     }
@@ -276,36 +278,37 @@ exports.setUser = async function (ctx, next) {
                     }
                 }
             })
-        } else {
-            await bcx.queryUserOperations({
-                account: user.id,
-                limit: 0,
-                callback: async operas => {}
-            })
-            await bcx.queryAccountAllBalances({
-                unit: '',
-                account: user.user_name,
-                callback: async count => {
-                    user.counts = count.data
-                }
-            })
-            // if (item.type === 'transfer_from') {
-            //     user.trans_counts.from_num++
-            // }
-            // if (item.type === 'transfer_to') {
-            //     user.trans_counts.to_num++
-            // }
-            if (ctx.trx_id) {
-                user.trx_ids.push({
-                    trx_id: ctx.trx_id
-                })
-            }
-            ctx.trx_id = null
-            await UserModel.findOneAndUpdate({
-                user_name: user.user_name
-            }, {
-                counts: user.counts,
-            }).exec()
         }
+        // } else {
+        //     await bcx.queryUserOperations({
+        //         account: user.id,
+        //         limit: 0,
+        //         callback: async operas => {}
+        //     })
+        //     await bcx.queryAccountAllBalances({
+        //         unit: '',
+        //         account: user.user_name,
+        //         callback: async count => {
+        //             user.counts = count.data
+        //         }
+        //     })
+        //     // if (item.type === 'transfer_from') {
+        //     //     user.trans_counts.from_num++
+        //     // }
+        //     // if (item.type === 'transfer_to') {
+        //     //     user.trans_counts.to_num++
+        //     // }
+        //     if (ctx.trx_id) {
+        //         user.trx_ids.push({
+        //             trx_id: ctx.trx_id
+        //         })
+        //     }
+        //     ctx.trx_id = null
+        //     await UserModel.findOneAndUpdate({
+        //         user_name: user.user_name
+        //     }, {
+        //         counts: user.counts,
+        //     }).exec()
+        // }
     })
 }
