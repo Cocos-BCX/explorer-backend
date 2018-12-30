@@ -40,7 +40,7 @@ exports.queryCount = async function () {
   //   }
   // })
   let counts = {
-    tps: Math.ceil(Math.random() * 20),
+    tps: tps.transactions && tps.transactions.length,
     max: 534
   }
   trans = tran_num.length || 0

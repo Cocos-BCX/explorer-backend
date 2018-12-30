@@ -201,8 +201,8 @@ async function saveData(result, ctx, next, i) {
                         await transfer.save()
                         //转账去重
                         // await query.subscribeToTransfer(ctx, next)
-                        ctx.users = users
-                        await exports.setUser(ctx, next)
+                        // ctx.users = users
+                        // await exports.setUser(ctx, next)
                     }
                 })
             }
