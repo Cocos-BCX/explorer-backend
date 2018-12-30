@@ -19,7 +19,7 @@ exports.subscribeToBlocks = async function (ctx, next) {
             }
         }
     })
-    ctx.block_height = 880088;
+    ctx.block_height = 900088;
     if (ctx.block_height) {
         let detail = await BlockDetailModel.findOne({
             detail: 'detail'
@@ -149,12 +149,6 @@ async function saveData(result, ctx, next, i) {
     //     block_height: i + 1
     // })
     // exports.Block(ctx, next, i + 1)
-    await BlockDetailModel.findOneAndUpdate({
-        detail: 'detail'
-    }, {
-        block_height: i + 1
-    })
-    await exports.Block(ctx, next, 1 + i)
     let transactions = [],
         trx_ids = []
     if (
