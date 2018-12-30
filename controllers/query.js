@@ -26,7 +26,7 @@ exports.queryCount = async function () {
       $gte: time
     }
   })
-  let tps = await blockModel.find({
+  let tps = await blockModel.findOne({
     block_height: blocks.block_height
   }).hint({
     'block_height': 1,
@@ -39,8 +39,8 @@ exports.queryCount = async function () {
   //     $size: 10
   //   }
   // })
-  console.log(tps.transactions);
-  console.log(tps.transactions.length);
+  // console.log(tps.transactions);
+  // console.log(tps.transactions.length);
   let counts = {
     tps: tps.transactions && tps.transactions.length,
     max: 534
