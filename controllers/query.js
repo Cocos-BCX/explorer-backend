@@ -45,7 +45,7 @@ exports.queryCount = async function() {
 	// console.log(tps.transactions);
 	// console.log(tps.transactions.length);
 	let counts = {
-		tps: (tps.transactions && tps.transactions.length) || 0,
+		tps: (tps && tps.transactions && tps.transactions.length) || 0,
 		max: 534,
 	}
 	trans = tran_num.length || 0
