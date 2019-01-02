@@ -9,7 +9,7 @@ const dataShow = require('../models/data.show.js')
 const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
 //统计首页信息
-exports.queryCount = async function() {
+exports.queryCount = async function () {
 	let blocks = await BlockDetailModel.findOne({
 		detail: 'detail',
 	})
@@ -28,7 +28,7 @@ exports.queryCount = async function() {
 	})
 	let tps = await blockModel
 		.findOne({
-			block_height: blocks.block_height,
+			block_height: blocks.block_height - 5,
 		})
 		.hint({
 			block_height: 1,
@@ -49,17 +49,14 @@ exports.queryCount = async function() {
 		max: 534,
 	}
 	trans = tran_num.length || 0
-	await BlockDetailModel.findOneAndUpdate(
-		{
-			detail: 'detail',
-		},
-		{
-			user_count,
-			nodes: 4,
-			trans,
-			counts,
-		}
-	)
+	await BlockDetailModel.findOneAndUpdate({
+		detail: 'detail',
+	}, {
+		user_count,
+		nodes: 4,
+		trans,
+		counts,
+	})
 }
 
 //查询首页区块列表
@@ -100,20 +97,17 @@ exports.queryDataBlock = async function name(limit, page) {
 			})
 			await blockModel.save()
 		} else {
-			await dataShow.findOneAndUpdate(
-				{
-					detail: 'block',
-				},
-				{
-					dataArray: block,
-				}
-			)
+			await dataShow.findOneAndUpdate({
+				detail: 'block',
+			}, {
+				dataArray: block,
+			})
 		}
 	}
 }
 
 //查询首页交易列表
-exports.queryAllTrans = async function(limit, page) {
+exports.queryAllTrans = async function (limit, page) {
 	let skip = limit * (page - 1)
 	let trans = await transferModel
 		.find()
@@ -151,14 +145,11 @@ exports.queryAllTrans = async function(limit, page) {
 			})
 			await tranfer.save()
 		} else {
-			await dataShow.findOneAndUpdate(
-				{
-					detail: 'transfer',
-				},
-				{
-					dataArray: trans,
-				}
-			)
+			await dataShow.findOneAndUpdate({
+				detail: 'transfer',
+			}, {
+				dataArray: trans,
+			})
 		}
 		// ctx.body = {
 		//   status: 'success',
@@ -169,11 +160,10 @@ exports.queryAllTrans = async function(limit, page) {
 }
 
 //统计转账图表信息
-exports.countDayBlock = async function() {
+exports.countDayBlock = async function () {
 	let time = new Date(moment(new Date().getTime() - 24 * 60 * 60 * 1000 * 15).format('YYYY-MM-DD'))
 	let yesterday = new Date(moment(new Date().getTime() - 24 * 60 * 60 * 1000).format('YYYY-MM-DD'))
-	let address = await UserModel.aggregate([
-		{
+	let address = await UserModel.aggregate([{
 			$match: {
 				create_time: {
 					$gt: time,
@@ -229,8 +219,7 @@ exports.countDayBlock = async function() {
 		},
 	]).allowDiskUse(true)
 	let transfer = await transferModel
-		.aggregate([
-			{
+		.aggregate([{
 				$match: {
 					date: {
 						$gt: time,
@@ -299,14 +288,11 @@ exports.countDayBlock = async function() {
 		})
 		await chartTransModel.save()
 	} else {
-		await dataShow.findOneAndUpdate(
-			{
-				detail: 'chart_trans',
-			},
-			{
-				dataArray: tranfers,
-			}
-		)
+		await dataShow.findOneAndUpdate({
+			detail: 'chart_trans',
+		}, {
+			dataArray: tranfers,
+		})
 	}
 	let chart_address = await dataShow.findOne({
 		detail: 'chart_address',
@@ -318,18 +304,15 @@ exports.countDayBlock = async function() {
 		})
 		await chartAddressModel.save()
 	} else {
-		await dataShow.findOneAndUpdate(
-			{
-				detail: 'chart_address',
-			},
-			{
-				dataArray: address_count,
-			}
-		)
+		await dataShow.findOneAndUpdate({
+			detail: 'chart_address',
+		}, {
+			dataArray: address_count,
+		})
 	}
 }
 
-exports.queryTransfer = async function(ctx, next) {
+exports.queryTransfer = async function (ctx, next) {
 	await bcx.queryUserOperations({
 		account: 'test1',
 		limit: 100,
@@ -340,7 +323,7 @@ exports.queryTransfer = async function(ctx, next) {
 	})
 }
 
-exports.queryAccountAllBalances = async function(ctx, next) {
+exports.queryAccountAllBalances = async function (ctx, next) {
 	await bcx.queryAccountAllBalances({
 		unit: '',
 		account: 'test1',
@@ -352,9 +335,8 @@ exports.queryAccountAllBalances = async function(ctx, next) {
 }
 
 //区块去重
-exports.subscribeToBlocks = async function(ctx, next) {
-	let block = await blockModel.aggregate([
-		{
+exports.subscribeToBlocks = async function (ctx, next) {
+	let block = await blockModel.aggregate([{
 			$group: {
 				_id: {
 					block_id: '$block_id',
@@ -377,7 +359,7 @@ exports.subscribeToBlocks = async function(ctx, next) {
 		},
 	])
 	// .allowDiskUse(true);
-	block.forEach(async function(it) {
+	block.forEach(async function (it) {
 		it.dups.shift()
 		await blockModel.remove({
 			_id: {
@@ -388,9 +370,8 @@ exports.subscribeToBlocks = async function(ctx, next) {
 }
 
 //交易去重
-exports.subscribeToTrans = async function() {
-	let trans = await transModel.aggregate([
-		{
+exports.subscribeToTrans = async function () {
+	let trans = await transModel.aggregate([{
 			$group: {
 				_id: {
 					trx_id: '$trx_id',
@@ -412,7 +393,7 @@ exports.subscribeToTrans = async function() {
 		},
 	])
 	// .allowDiskUse(true);
-	trans.forEach(async function(it) {
+	trans.forEach(async function (it) {
 		it.dups.shift()
 		await transModel.remove({
 			_id: {
@@ -423,9 +404,8 @@ exports.subscribeToTrans = async function() {
 }
 
 //转账去重
-exports.subscribeToTransfer = async function() {
-	let transfer = await transferModel.aggregate([
-		{
+exports.subscribeToTransfer = async function () {
+	let transfer = await transferModel.aggregate([{
 			$group: {
 				_id: {
 					trx_id: '$trx_id',
@@ -448,7 +428,7 @@ exports.subscribeToTransfer = async function() {
 		},
 	])
 	// .allowDiskUse(true);
-	transfer.forEach(async function(it) {
+	transfer.forEach(async function (it) {
 		it.dups.shift()
 		await transferModel.remove({
 			_id: {
@@ -458,7 +438,7 @@ exports.subscribeToTransfer = async function() {
 	})
 }
 
-exports.searchMoney = async function(ctx, next) {
+exports.searchMoney = async function (ctx, next) {
 	let users = await UserModel.find({}).exec()
 	let lists = []
 	users.forEach(async item => {
@@ -468,14 +448,11 @@ exports.searchMoney = async function(ctx, next) {
 			callback: async count => {
 				item.counts = count.data
 				console.log(item.counts)
-				await UserModel.findOneAndUpdate(
-					{
-						user_name: item.user_name,
-					},
-					{
-						counts: item.counts,
-					}
-				).exec()
+				await UserModel.findOneAndUpdate({
+					user_name: item.user_name,
+				}, {
+					counts: item.counts,
+				}).exec()
 			},
 		})
 	})
