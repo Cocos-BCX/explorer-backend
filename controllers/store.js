@@ -10,7 +10,7 @@ const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
 //监听区块信息
 
-exports.subscribeToBlocks = async function(ctx, next) {
+exports.subscribeToBlocks = async function (ctx, next) {
 	ctx.locked = false
 	let block_height = await bcx.subscribeToBlocks({
 		callback: async result => {
@@ -19,23 +19,21 @@ exports.subscribeToBlocks = async function(ctx, next) {
 			}
 		},
 	})
-	ctx.block_height = 1400088
+	ctx.block_height = 1800088
 	if (ctx.block_height) {
 		let detail = await BlockDetailModel.findOne({
 			detail: 'detail',
 		})
 		if (!detail) {
 			let blocks = await blockModel
-				.aggregate([
-					{
-						$group: {
-							_id: 'block_height',
-							max_value: {
-								$max: '$block_height',
-							},
+				.aggregate([{
+					$group: {
+						_id: 'block_height',
+						max_value: {
+							$max: '$block_height',
 						},
 					},
-				])
+				}, ])
 				.exec()
 			let block_detail = new BlockDetailModel({
 				block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
@@ -53,14 +51,11 @@ exports.subscribeToBlocks = async function(ctx, next) {
 			}
 			if (ctx.blcok_length < ctx.block_height) {
 				for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-					await BlockDetailModel.findOneAndUpdate(
-						{
-							detail: 'detail',
-						},
-						{
-							block_height: i + 1,
-						}
-					)
+					await BlockDetailModel.findOneAndUpdate({
+						detail: 'detail',
+					}, {
+						block_height: i + 1,
+					})
 					await exports.Block(ctx, next, 1 + i)
 				}
 			}
@@ -69,7 +64,7 @@ exports.subscribeToBlocks = async function(ctx, next) {
 }
 
 //入库block区块
-exports.Block = async function(ctx, next, length) {
+exports.Block = async function (ctx, next, length) {
 	let index = length
 	if (index < ctx.block_height) {
 		await bcx
@@ -172,12 +167,10 @@ async function saveData(result, ctx, next, i) {
 					let parse_ops = option && option.parse_operations
 					//新建账户
 					if (option.type === 'account_create') {
-						users = [
-							{
-								id: parse_ops.new_account,
-								type: 'account_create',
-							},
-						]
+						users = [{
+							id: parse_ops.new_account,
+							type: 'account_create',
+						}, ]
 						ctx.users = users
 						//用户创建时间
 						ctx.create_time = item.expiration
@@ -231,7 +224,7 @@ async function saveData(result, ctx, next, i) {
 // }
 
 //用户表
-exports.setUser = async function(ctx, next) {
+exports.setUser = async function (ctx, next) {
 	await ctx.users.map(async (item, index) => {
 		console.log(item.id)
 		let user = await UserModel.findOne({
@@ -241,15 +234,12 @@ exports.setUser = async function(ctx, next) {
 			await bcx.queryUserInfo({
 				account: item.id,
 				callback: async result => {
-					if (result.locked || !result.data || !result.data.account) {
-					} else {
+					if (result.locked || !result.data || !result.data.account) {} else {
 						//用户名作索引用
 						result.data.user_name = result.data.account.name
-						result.data.trx_ids = [
-							{
-								trx_id: ctx.trx_id,
-							},
-						]
+						result.data.trx_ids = [{
+							trx_id: ctx.trx_id,
+						}, ]
 						//数组的话最后清除
 						if (index === ctx.users.length - 1) {
 							ctx.trx_id = null

@@ -44,22 +44,24 @@ exports.queryAllTrans = async function (ctx, next) {
     }).hint({
       trx_id: 1,
     }).count();
-    let trans = await transModel.find({
-      parse_ops: {
-        $elemMatch: {
-          $ne: null
-        }
-      }
-    }).limit(limit).skip(skip).sort({
-      block: -1
-    }).hint({
-      trx_id: 1,
-    }).exec();
+    console.log(trans_total);
+    // let trans = await transModel.find({
+    //   parse_ops: {
+    //     $elemMatch: {
+    //       $ne: null
+    //     }
+    //   }
+    // }).limit(limit).skip(skip).sort({
+    //   block: -1
+    // }).hint({
+    //   trx_id: 1,
+    // }).exec();
+    console.log(trans);
     if (trans) {
       ctx.body = {
         status: 'success',
-        trans: trans,
-        trans_total,
+        trans: [],
+        trans_total: 100000,
       }
     }
   } catch (err) {

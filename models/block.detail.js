@@ -33,6 +33,10 @@ const BlockDetailSchema = new Schema({
     type: Number,
     default: 0
   },
+  sub_block_height: {
+    type: Number,
+    detail: 0,
+  },
   detail: {
     type: String,
     default: 'detail'
