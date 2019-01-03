@@ -12,57 +12,45 @@ const EventEmitter = require('events').EventEmitter
 
 exports.subscribeToBlocks = async function (ctx, next) {
 	ctx.locked = false
-	bcx.subscribeToBlocks({
+	let block_height = await bcx.subscribeToBlocks({
 		callback: async result => {
 			if (result.data) {
-				ctx.block_height = result.data.block_height
-				await BlockDetailModel.findOneAndUpdate({
-					detail: 'detail',
-				}, {
-					sub_block_height: result.data.block_height
-				})
+				return result.data.block_height
 			}
 		},
 	})
-
-	ctx.block_height = 1800088
-	// if (ctx.block_height) {
-	let detail = await BlockDetailModel.findOne({
-		detail: 'detail',
-	})
-	if (!detail) {
-		let blocks = await blockModel
-			.aggregate([{
-				$group: {
-					_id: 'block_height',
-					max_value: {
-						$max: '$block_height',
+	ctx.block_height = 1500088
+	if (ctx.block_height) {
+		let detail = await BlockDetailModel.findOne({
+			detail: 'detail',
+		})
+		if (!detail) {
+			let blocks = await blockModel
+				.aggregate([{
+					$group: {
+						_id: 'block_height',
+						max_value: {
+							$max: '$block_height',
+						},
 					},
-				},
-			}, ])
-			.exec()
-		let block_detail = new BlockDetailModel({
-			block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
-			detail: 'detail',
-		})
-		await block_detail.save()
-	} else {
-		let blocks = await BlockDetailModel.findOne({
-			detail: 'detail',
-		})
-		if (!blocks) {
-			ctx.blcok_length = 0
+				}, ])
+				.exec()
+			let block_detail = new BlockDetailModel({
+				block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
+				detail: 'detail',
+			})
+			await block_detail.save()
 		} else {
-			ctx.blcok_length = blocks.block_height
-		}
-		ctx.block_height = detail.sub_block_height;
-		async function blocksStore() {
-			if (ctx.blcok_length < detail.sub_block_height) {
+			let blocks = await BlockDetailModel.findOne({
+				detail: 'detail',
+			})
+			if (!blocks) {
+				ctx.blcok_length = 0
+			} else {
+				ctx.blcok_length = blocks.block_height
+			}
+			if (ctx.blcok_length < ctx.block_height) {
 				for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-					let detail = await BlockDetailModel.findOne({
-						detail: 'detail',
-					})
-					ctx.block_height = detail.sub_block_height
 					await BlockDetailModel.findOneAndUpdate({
 						detail: 'detail',
 					}, {
@@ -70,15 +58,10 @@ exports.subscribeToBlocks = async function (ctx, next) {
 					})
 					await exports.Block(ctx, next, 1 + i)
 				}
-				if (ctx.blcok_length < ctx.block_height) {
-					blocksStore()
-				}
 			}
 		}
-		blocksStore()
 	}
 }
-// }
 
 //入库block区块
 exports.Block = async function (ctx, next, length) {
