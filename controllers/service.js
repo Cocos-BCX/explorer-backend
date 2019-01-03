@@ -9,13 +9,13 @@ exports.storeData = async function () {
   //首页统计信息
   setInterval(() => {
     queryDetail.queryCount()
-  }, 5000)
+  }, 1000)
   //首页列表信息
   setInterval(() => {
     queryDetail.queryDataBlock(10, 1)
     queryDetail.queryAllTrans(10, 1)
-  }, 5000)
+  }, 1000)
   setInterval(() => {
     queryDetail.countDayBlock()
-  }, 5000)
+  }, 1000 * 60 * 60 * 6)
 }
