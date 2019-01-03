@@ -56,21 +56,26 @@ exports.subscribeToBlocks = async function (ctx, next) {
 			ctx.blcok_length = blocks.block_height
 		}
 		ctx.block_height = detail.sub_block_height;
-		if (ctx.blcok_length < detail.sub_block_height) {
-			for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-				let detail = await BlockDetailModel.findOne({
-					detail: 'detail',
-				})
-				ctx.block_height = detail.sub_block_height
-				await BlockDetailModel.findOneAndUpdate({
-					detail: 'detail',
-				}, {
-					block_height: i,
-				})
-
-				await exports.Block(ctx, next, 1 + i)
+		async function blocksStore() {
+			if (ctx.blcok_length < detail.sub_block_height) {
+				for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
+					let detail = await BlockDetailModel.findOne({
+						detail: 'detail',
+					})
+					ctx.block_height = detail.sub_block_height
+					await BlockDetailModel.findOneAndUpdate({
+						detail: 'detail',
+					}, {
+						block_height: i + 1,
+					})
+					await exports.Block(ctx, next, 1 + i)
+				}
+				if (ctx.blcok_length < ctx.block_height) {
+					blocksStore()
+				}
 			}
 		}
+		blocksStore()
 	}
 }
 // }
