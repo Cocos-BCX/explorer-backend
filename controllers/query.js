@@ -44,9 +44,17 @@ exports.queryCount = async function () {
 	// })
 	// console.log(tps.transactions);
 	// console.log(tps.transactions.length);
-	let counts = {
-		tps: (tps && tps.transactions && tps.transactions.length) || 0,
-		max: 534,
+	let counts = {}
+	if (tps && tps.transactions && tps.transactions.length) {
+		counts = {
+			tps: tps.transactions.length,
+			max: tps.transactions.length > 534 ? tps.transactions.length : 534
+		}
+	} else {
+		counts = {
+			tps: 0,
+			max: 534,
+		}
 	}
 	trans = tran_num.length || 0
 	await BlockDetailModel.findOneAndUpdate({
@@ -298,7 +306,6 @@ exports.countDayBlock = async function () {
 		detail: 'chart_address',
 	})
 	if (!chart_address) {
-		console.log(chart_address);
 		let chartAddressModel = new dataShow({
 			dataArray: tranfers,
 			detail: 'chart_address',

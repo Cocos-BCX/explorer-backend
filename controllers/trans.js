@@ -41,6 +41,8 @@ exports.queryAllTrans = async function (ctx, next) {
           $ne: null
         }
       }
+    }).hint({
+      trx_id: 1,
     }).count();
     let trans = await transModel.find({
       parse_ops: {
@@ -50,6 +52,8 @@ exports.queryAllTrans = async function (ctx, next) {
       }
     }).limit(limit).skip(skip).sort({
       block: -1
+    }).hint({
+      trx_id: 1,
     }).exec();
     if (trans) {
       ctx.body = {
