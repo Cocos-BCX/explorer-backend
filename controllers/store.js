@@ -25,7 +25,7 @@ exports.subscribeToBlocks = async function (ctx, next) {
 		},
 	})
 
-	// ctx.block_height = 1800088
+	ctx.block_height = 1800088
 	// if (ctx.block_height) {
 	let detail = await BlockDetailModel.findOne({
 		detail: 'detail',
