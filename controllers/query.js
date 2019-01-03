@@ -280,7 +280,7 @@ exports.countDayBlock = async function () {
 	let chart_trans = await dataShow.findOne({
 		detail: 'chart_trans',
 	})
-	console.log(chart_trans)
+	// console.log(chart_trans)
 	if (!chart_trans) {
 		let chartTransModel = new dataShow({
 			dataArray: tranfers,
@@ -298,6 +298,7 @@ exports.countDayBlock = async function () {
 		detail: 'chart_address',
 	})
 	if (!chart_address) {
+		console.log(chart_address);
 		let chartAddressModel = new dataShow({
 			dataArray: tranfers,
 			detail: 'chart_address',
