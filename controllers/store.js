@@ -15,22 +15,27 @@ exports.subscribeToBlocks = async function (ctx, next) {
 	await bcx.subscribeToBlocks({
 		callback: async result => {
 			if (result.data) {
-				let detail = await BlockDetailModel.findOne({
+				// let detail = await BlockDetailModel.findOne({
+				// 	detail: 'detail'
+				// })
+				// if (detail.block_height <= result.data.block_height) {
+				// 	console.log(result.data.block_height);
+				// }
+				await BlockDetailModel.findOneAndUpdate({
 					detail: 'detail'
+				}, {
+					sub_block_height: result.data.block_height
 				})
-				if (detail.block_height < result.data.block_height) {
-
-				}
 				// ctx.block_height = result.data.block_height
 			}
 		},
 	})
-	ctx.block_height = 1380000
+	let detail = await BlockDetailModel.findOne({
+		detail: 'detail'
+	})
+	ctx.block_height = detail.sub_block_height
 	if (ctx.block_height) {
 		ctx.locked = true
-		let detail = await BlockDetailModel.findOne({
-			detail: 'detail'
-		})
 		if (!detail) {
 			let blocks = await blockModel
 				.aggregate([{
