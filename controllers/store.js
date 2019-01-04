@@ -16,12 +16,11 @@ exports.subscribeToBlocks = async function(ctx, next) {
 		callback: async result => {
 			if (result.data) {
 				let detail = await BlockDetailModel.findOne({ detail: 'detail' })
-				console.log(detail.block_height)
 				ctx.block_height = result.data.block_height
 			}
 		},
 	})
-	ctx.block_height = 1500000
+	ctx.block_height = 1290000
 	if (ctx.block_height) {
 		ctx.locked = true
 		let detail = await BlockDetailModel.findOne({ detail: 'detail' })
@@ -228,7 +227,6 @@ async function saveData(result, ctx, next, i) {
 //用户表
 exports.setUser = async function(ctx, next) {
 	await ctx.users.map(async (item, index) => {
-		console.log(item.id)
 		let user = await UserModel.findOne({
 			user_name: item.id,
 		}).exec()
