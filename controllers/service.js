@@ -17,5 +17,5 @@ exports.storeData = async function () {
   }, 1000)
   setInterval(() => {
     queryDetail.countDayBlock()
-  }, 1000 * 60 * 60 * 4)
+  }, 1000 * 60 * 60 * 2)
 }

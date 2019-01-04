@@ -26,13 +26,13 @@ exports.subscribeToBlocks = async function (ctx, next) {
 				}, {
 					sub_block_height: result.data.block_height
 				})
-				// ctx.block_height = result.data.block_height
 			}
 		},
 	})
 	let detail = await BlockDetailModel.findOne({
 		detail: 'detail'
 	})
+
 	ctx.block_height = detail.sub_block_height
 	if (ctx.block_height) {
 		ctx.locked = true
@@ -68,6 +68,7 @@ exports.subscribeToBlocks = async function (ctx, next) {
 					}, {
 						block_height: i + 1
 					})
+					console.log(i)
 					await exports.Block(ctx, next, 1 + i)
 				}
 			}
@@ -91,6 +92,7 @@ exports.Block = async function (ctx, next, length) {
 				}
 			})
 			.catch(async err => {
+				console.log(err)
 				await exports.Block(ctx, next, length)
 			})
 	}
@@ -245,7 +247,7 @@ exports.setUser = async function (ctx, next) {
 			user_name: item.id,
 		}).exec()
 		if (!user) {
-			await bcx.queryUserInfo({
+			await bcx.queryAccountInfo({
 				account: item.id,
 				callback: async result => {
 					if (result.locked || !result.data || !result.data.account) {} else {

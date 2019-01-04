@@ -78,12 +78,8 @@ exports.queryUserBlock = async function (ctx, next) {
         "parse_operations.to": ctx.params.user
       }]
     }
-    let transfer = await transferModel.find(condition).hint({
-      date: 1,
-    }).limit(limit).skip(skip).sort('-date').exec()
-    let count = await transferModel.find(condition).count().hint({
-      date: 1,
-    }).exec();
+    let transfer = await transferModel.find(condition).limit(limit).skip(skip).sort('-date').exec()
+    let count = await transferModel.find(condition).count().exec();
     let from = await transferModel.find({
       "parse_operations.from": ctx.params.user
     }).hint({
