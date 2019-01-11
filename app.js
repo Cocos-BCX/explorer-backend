@@ -40,6 +40,8 @@ mongoose.connect(
 		reconnectTries: Number.MAX_VALUE,
 	}
 )
+console.log("connet mongodb ", dbHosts)
+
 
 app.use(async (ctx, next) => {
 	ctx.set('Access-Control-Allow-Origin', '*')
@@ -75,12 +77,7 @@ conn.on('disconnected', function () {
 conn.on('reconnected', function () {
 	console.info('[MonoDB]:重开')
 })
-// setInterval(() => {
-// 	async () => {
 
-// 		// }, 5000)
-// 	}
-// }, 1000)
 
 app.use(async (ctx, next) => {
 	const start = new Date()

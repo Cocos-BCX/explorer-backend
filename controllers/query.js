@@ -28,7 +28,7 @@ exports.queryCount = async function () {
 	})
 	let tps = await blockModel
 		.findOne({
-			block_height: blocks.block_height - 5,
+			block_height: blocks.block_height || 0,
 		})
 		.hint({
 			block_height: 1,
@@ -124,10 +124,6 @@ exports.queryAllTrans = async function (limit, page) {
 		})
 		.limit(limit)
 		.skip(skip)
-		.sort({
-			date: -1,
-			block_num: -1,
-		})
 		.exec()
 	if (trans) {
 		let tran_collect = []

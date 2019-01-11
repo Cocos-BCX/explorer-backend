@@ -8,35 +8,63 @@ const FailSchema = require('../models/fail')
 const query = require('./query.js')
 const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
-//监听区块信息
+// const workerService = require("../work_job/worker")
 
+
+var lastestBlockNum
+
+function getLastestBlockNum() {
+	return lastestBlockNum
+}
+
+async function setLastestBlockNum(bn) {
+    lastestBlockNum = bn
+    await BlockDetailModel.findOneAndUpdate(
+        {detail: 'detail'},
+        {sub_block_height: lastestBlockNum, update_time: new Date() })
+}
+
+//监听区块信息
 exports.subscribeToBlocks = async function (ctx, next) {
-	ctx.locked = false
+
+//初始化表
+{
+	let detail = await BlockDetailModel.findOne({ detail: 'detail'})
+	if(!detail){
+		let block_detail = new BlockDetailModel({
+			block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
+			detail: 'detail',
+		})
+		await block_detail.save()
+		detail = await BlockDetailModel.findOne({ detail: 'detail'} )
+
+	} else {
+		lastestBlockNum = detail.sub_block_height
+	}
+}
+
+
 	await bcx.subscribeToBlocks({
 		callback: async result => {
-			if (result.data) {
-				// let detail = await BlockDetailModel.findOne({
-				// 	detail: 'detail'
-				// })
-				// if (detail.block_height <= result.data.block_height) {
-				// 	console.log(result.data.block_height);
-				// }
-				await BlockDetailModel.findOneAndUpdate({
-					detail: 'detail'
-				}, {
-					sub_block_height: result.data.block_height
-				})
+			console.log("接收到订阅推送 新块blockNum:", result.data.block_height, ",time:", new Date().toLocaleString())
+
+			if (result.data) {		//订阅推送过来 刚产生的新块
+                console.log("新块高度写入Detail blockNum:", result.data.block_height, ",time:", new Date().toLocaleString())
+
+				//更新detail表 最新区块
+                await setLastestBlockNum(result.data.block_height)
 			}
 		},
 	})
-	let detail = await BlockDetailModel.findOne({
-		detail: 'detail'
-	})
 
+	//先执行
+    let detail = await BlockDetailModel.findOne( { detail: 'detail'} )
 	ctx.block_height = detail.sub_block_height
-	if (ctx.block_height) {
-		ctx.locked = true
-		if (!detail) {
+    console.log("查detail最新高度---11111 sub_block_height:", detail.sub_block_height, ",time:", new Date().toLocaleString())
+
+    if (ctx.block_height) {
+
+		if (!detail) {	//BlockDetail 没数据
 			let blocks = await blockModel
 				.aggregate([{
 					$group: {
@@ -53,23 +81,24 @@ exports.subscribeToBlocks = async function (ctx, next) {
 			})
 			await block_detail.save()
 		} else {
+
+			//重复查BlockDetail表----待处理
 			let blocks = await BlockDetailModel.findOne({
 				detail: 'detail'
 			})
-			if (!blocks) {
+            console.log("查detail最新高度---222 sub_block_height:", detail.sub_block_height, ",time:", new Date().toLocaleString())
+            if (!blocks) {
 				ctx.blcok_length = 0
 			} else {
 				ctx.blcok_length = blocks.block_height
 			}
 			if (ctx.blcok_length < ctx.block_height) {
-				for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-					await BlockDetailModel.findOneAndUpdate({
-						detail: 'detail'
-					}, {
-						block_height: i + 1
-					})
-					console.log(i)
+				for (var i = ctx.blcok_length; i < ctx.block_height; i++) {			//此处换成 多线程并发
 					await exports.Block(ctx, next, 1 + i)
+
+					// let worker = workerService.getWork()
+					// let obj = {"ctx":ctx, "next":ctx, "blockNum": i+1 }
+					// worker.postMessage(obj)
 				}
 			}
 		}
@@ -78,22 +107,25 @@ exports.subscribeToBlocks = async function (ctx, next) {
 
 //入库block区块
 exports.Block = async function (ctx, next, length) {
-	let index = length
+    console.log("入库Block(..)---11111 bN:", length,",最新bN:", ctx.block_height, ",time:", new Date().toLocaleString())
+    let index = length
 	if (index < ctx.block_height) {
 		await bcx
 			.queryBlock({
 				block: index,
 			})
 			.then(async result => {
+                console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
 				if (result.code === 1) {
 					await saveData(result, ctx, next, index)
 				} else {
-					await exports.Block(ctx, next, length)
+                    console.log("入库Block(..)---333 获取区块失败 bN:", index, ",time:", new Date().toLocaleString())
+					await exports.Block(ctx, next, index)
 				}
 			})
 			.catch(async err => {
-				console.log(err)
-				await exports.Block(ctx, next, length)
+				console.log("入库Block(..)---444 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err.toString())
+				await exports.Block(ctx, next, index)
 			})
 	}
 
@@ -143,7 +175,8 @@ async function failBlock(ctx, next, i) {
 }
 
 //保存数据
-async function saveData(result, ctx, next, i) {
+async function saveData(result, ctx, next, blockNum) {
+    console.log("saveData()-0000 进入--bN:", blockNum, ",time:", new Date().toLocaleString())
 	let block = await blockModel
 		.findOne({
 			block_height: result.data && result.data.block_height,
@@ -154,6 +187,7 @@ async function saveData(result, ctx, next, i) {
 			timestamp: 1,
 		})
 		.exec()
+	console.log("saveData()-1111入库前检查区块是否存在,bN:", blockNum, ",time:", new Date().toLocaleString())
 	// if (!block) {
 	// 	查询交易
 	// 	await BlockDetailModel.findOneAndUpdate(
@@ -167,12 +201,12 @@ async function saveData(result, ctx, next, i) {
 	// 	exports.Block(ctx, next, i + 1)
 	let transactions = [],
 		trx_ids = []
-	if (result.data && result.data.transactions && result.data.transactions.length) {
-		result.data.transactions.forEach(async item => {
+	if (result.data && result.data.transactions && result.data.transactions.length) {	//区块中有交易
+		result.data.transactions.forEach(async item => {		//此处考虑交易批量入库
 			transactions.push({
 				trx_id: item.trx_id,
 			})
-			item.block = i
+			item.block = blockNum
 			let trans = new transModel(item)
 			await trans.save()
 			//交易去重
@@ -219,6 +253,8 @@ async function saveData(result, ctx, next, i) {
 				})
 			}
 		})
+        console.log("saveData()-2222交易入库-blockNum:", blockNum, ",交易数量:", result.data.transactions.length, ",time:",  new Date().toLocaleString())
+
 	}
 	if (result.data) {
 		// result.data.transactions = transactions || []
@@ -230,12 +266,21 @@ async function saveData(result, ctx, next, i) {
 		//     }]
 		//     await exports.setUser(ctx, next)
 		// }
-		const block = new blockModel(result.data)
-		await block.save()
+		let block = new blockModel(result.data)
+        block.create_time = new Date()
+        console.log("saveData()-2222.5555入库--前-----blockNum:", blockNum, "time:",  new Date().toLocaleString())
+        await block.save()
+        console.log("saveData()-3333入库成功-blockNum:", blockNum, "time:",  new Date().toLocaleString())
+        await BlockDetailModel.findOneAndUpdate({
+            detail: 'detail'
+        }, {
+            block_height: blockNum
+        })
+		console.log("saveData()-44444更新detail blockNum:", blockNum, "time:",  new Date().toLocaleString())
 		//区块去重
 		// await query.subscribeToBlocks(ctx, next)
 	} else {
-		exports.failBlock(ctx, next, i)
+		exports.failBlock(ctx, next, blockNum)
 	}
 }
 // }

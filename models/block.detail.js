@@ -40,6 +40,9 @@ const BlockDetailSchema = new Schema({
   detail: {
     type: String,
     default: 'detail'
+  },
+  update_time: {
+    type: Date,
   }
 });
 

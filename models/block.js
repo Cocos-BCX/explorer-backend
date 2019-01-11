@@ -64,6 +64,10 @@ const BlockSchema = new Schema({
   //区块总数
   trx_count: {
     type: Number
+  },
+  //入库时间
+  create_time:{
+    type: Date
   }
 });
 BlockSchema.index({
