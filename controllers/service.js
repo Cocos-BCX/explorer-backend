@@ -5,7 +5,9 @@ exports.storeData = async function () {
     next = {},
     query = {};
   //区块入库
-  storeBlock.subscribeToBlocks(ctx, next)
+  storeBlock.initStore();
+  storeBlock.subscribeToBlocks(ctx, next);
+  storeBlock.syncBlockData();
   //首页统计信息
   setInterval(() => {
     queryDetail.queryCount()
