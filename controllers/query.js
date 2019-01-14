@@ -78,7 +78,7 @@ exports.queryDataBlock = async function name(limit, page) {
 		.limit(limit)
 		.skip(skip)
 		.sort({
-			block_height: -1,
+			block_height: -1
 		})
 		.exec()
 	if (blocks) {
@@ -124,6 +124,9 @@ exports.queryAllTrans = async function (limit, page) {
 		})
 		.limit(limit)
 		.skip(skip)
+		.sort({
+			date: -1,
+		})
 		.exec()
 	if (trans) {
 		let tran_collect = []
