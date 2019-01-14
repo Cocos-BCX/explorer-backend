@@ -120,7 +120,7 @@ exports.queryAllTrans = async function (limit, page) {
 	let trans = await transferModel
 		.find()
 		.hint({
-			date: 1,
+			date: -1,
 		})
 		.limit(limit)
 		.skip(skip)
