@@ -93,6 +93,9 @@ app.on('error', (err, ctx) => {
 	console.error('server error', err, ctx)
 })
 
+console.log("----服务启动-----time:", new Date().toLocaleString())
+
+
 app.listen(5001)
 
 module.exports = app
