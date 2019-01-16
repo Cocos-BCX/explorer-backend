@@ -48,7 +48,7 @@ exports.queryCount = async function () {
 	if (tps && tps.transactions && tps.transactions.length) {
 		counts = {
 			tps: tps.transactions.length,
-			max: tps.transactions.length > 534 ? tps.transactions.length : 534
+			max: tps.transactions.length > 510 ? tps.transactions.length : 534
 		}
 	} else {
 		counts = {
