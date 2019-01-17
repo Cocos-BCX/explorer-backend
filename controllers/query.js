@@ -10,7 +10,7 @@ const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
 //统计首页信息
 exports.queryCount = async function () {
-	let blocks = await BlockDetailModel.findOne({
+	let detail = await BlockDetailModel.findOne({
 		detail: 'detail',
 	})
 	let user_count = await UserModel.count()
@@ -28,7 +28,7 @@ exports.queryCount = async function () {
 	})
 	let tps = await blockModel
 		.findOne({
-			block_height: blocks.block_height || 0,
+			block_height: detail.block_height || 0,
 		})
 		.hint({
 			block_height: 1,
@@ -48,12 +48,12 @@ exports.queryCount = async function () {
 	if (tps && tps.transactions && tps.transactions.length) {
 		counts = {
 			tps: tps.transactions.length,
-			max: tps.transactions.length > 510 ? tps.transactions.length : 534
+			max: tps.transactions.length > detail.counts.max ? tps.transactions.length : detail.counts.max
 		}
 	} else {
 		counts = {
 			tps: 0,
-			max: 534,
+			max: detail.counts.max,
 		}
 	}
 	trans = tran_num.length || 0
