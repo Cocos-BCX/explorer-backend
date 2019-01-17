@@ -44,6 +44,7 @@ exports.queryCount = async function () {
 	// })
 	// console.log(tps.transactions);
 	// console.log(tps.transactions.length);
+    detail.counts.max = 5100
 	let counts = {}
 	if (tps && tps.transactions && tps.transactions.length) {
 		counts = {
