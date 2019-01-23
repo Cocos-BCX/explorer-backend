@@ -27,7 +27,7 @@ exports.queryCount = async function () {
 	let tran_num = await transferModel.find({
 		date: {
 			$gte: start,
-			$lte: end,
+			$lt: end,
 		},
 	})
 	console.log("start:", start)
