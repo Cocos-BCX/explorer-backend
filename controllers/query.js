@@ -8,6 +8,8 @@ const queryMw = require('../middlewares/query.mw.js')
 const dataShow = require('../models/data.show.js')
 const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
+const util = require("../utils/util")
+
 //统计首页信息
 exports.queryCount = async function () {
 	let detail = await BlockDetailModel.findOne({
@@ -20,14 +22,19 @@ exports.queryCount = async function () {
 	//     nodes = result.data.nodes.length || 0
 	//   }
 	// })
-	let start = getLastDay()
-	let end =   getToday()
+	let start = util.getLastDay()
+	let end =   util.getToday()
 	let tran_num = await transferModel.find({
 		date: {
 			$gte: start,
 			$lte: end,
 		},
 	})
+	console.log("start:", start)
+	console.log("end  :", end)
+	console.log("tran_num:", tran_num.length)
+	console.log(tran_num[0])
+	console.log(tran_num[ tran_num.length-1 ])
 	let tps = await blockModel
 		.findOne({
 			block_height: detail.block_height || 0,
