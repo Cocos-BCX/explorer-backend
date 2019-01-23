@@ -20,10 +20,12 @@ exports.queryCount = async function () {
 	//     nodes = result.data.nodes.length || 0
 	//   }
 	// })
-	let time = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
+	let start = getLastDay()
+	let end =   getToday()
 	let tran_num = await transferModel.find({
 		date: {
-			$gte: time,
+			$gte: start,
+			$lte: end,
 		},
 	})
 	let tps = await blockModel
