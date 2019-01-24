@@ -157,7 +157,7 @@ exports.Block = async function (ctx, next, length) {		//length:本次同步目�
 				}
 			})
 			.catch(async err => {
-				console.log("入库Block(..)---444 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err.toString())
+				console.log("入库Block(..)---444.1 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err)
 				await exports.Block(ctx, next, index)
 			})
 	}
