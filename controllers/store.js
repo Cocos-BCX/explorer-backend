@@ -4,6 +4,7 @@ const transModel = require('../models/trans.js')
 const UserModel = require('../models/user.js')
 const BlockDetailModel = require('../models/block.detail.js')
 const transferModel = require('../models/transfer.js')
+const butBlockModel = require('../models/but_block.js')
 const FailSchema = require('../models/fail')
 const query = require('./query.js')
 const moment = require('moment')
@@ -158,7 +159,7 @@ exports.Block = async function (ctx, next, length) {		//length:本次同步目�
 			})
 			.catch(async err => {
 				console.log("入库Block(..)---444.1 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err)
-				await exports.Block(ctx, next, index)
+				await failBlock( index)
 			})
 	}
 
@@ -188,24 +189,22 @@ exports.Block = async function (ctx, next, length) {		//length:本次同步目�
 }
 
 
-//处理请求失败的
-async function failBlock(ctx, next, i) {
-	await bcx
-		.queryBlock({
-			block: i,
-		})
-		.then(async result => {
-			if (result.data) {
-				await saveData(result, ctx, next, i)
-			}
-		})
-		.catch(async err => {
-			let fail = new FailSchema()
-			await fail.save({
-				index: index,
-			})
-			// await failBlock(ctx, next, i)
-		})
+//处理请求失败的   记录出错blockNum ，跳过
+async function failBlock(blockNum) {
+
+    console.log("----failBlock()---11111--获取区块失败-----blockNum:", blockNum, "time:", new Date().toLocaleString())
+
+    let butBlockdb = await butBlockModel.findOne({ block_height: blockNum})
+	if (butBlockdb && butBlockdb.block_height == blockNum ) {
+        console.log("----failBlock()---22222--blockNum有记录过，跳过-----blockNum:", blockNum, "time:", new Date().toLocaleString())
+		return
+	}
+
+	butBlock = new butBlockModel()
+    butBlock.block_height = blockNum
+	await butBlock.save()
+    console.log("----failBlock()---33333--已记录下 blockNum:", blockNum, "time:", new Date().toLocaleString())
+
 }
 
 //保存数据
