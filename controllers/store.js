@@ -65,6 +65,7 @@ exports.initStore = async function () {
 		setCurrBlockHeight(detail.block_height)
 	}
 
+	console.log("----initStore()--最新区块高度:", getLastestBlockNum(), ",当前区块高度:", getCurrBlockHeight())
 
 }
 
@@ -95,7 +96,7 @@ exports.syncBlockData = async function () {
 	let next = {}
     let sub_block_height = getLastestBlockNum()
     ctx.block_height = sub_block_height
-    console.log("查detail最新高度---11111 sub_block_height:", sub_block_height, ",time:", new Date().toLocaleString())
+    console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:",  getCurrBlockHeight() ," lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
 
     if (ctx.block_height) {
 
@@ -121,10 +122,10 @@ exports.syncBlockData = async function () {
             let currBlockHeight = getCurrBlockHeight()
             console.log("查detail最新高度---222 sub_block_height:", sub_block_height, ",time:", new Date().toLocaleString())
              if (!currBlockHeight) {  //结束本次同步
-                return
-            } else {
-                ctx.blcok_length = currBlockHeight
+             	console.log("---syncBlockData()--currBlockHeight:为0")
+                // return
             }
+            ctx.blcok_length = currBlockHeight
             if (ctx.blcok_length < ctx.block_height) {
                 for (var i = ctx.blcok_length; i < ctx.block_height; i++) {			//此处换成 多线程并发
                     await exports.Block(ctx, next, 1 + i)	//同步下一个区块
@@ -140,7 +141,7 @@ exports.syncBlockData = async function () {
 }
 
 //入库block区块
-exports.Block = async function (ctx, next, length) {
+exports.Block = async function (ctx, next, length) {		//length:本次同步目标块
     console.log("入库Block(..)---11111 bN:", length,",最新bN:", ctx.block_height, ",time:", new Date().toLocaleString())
     let index = length
 	if (index < ctx.block_height) {

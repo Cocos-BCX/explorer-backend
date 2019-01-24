@@ -11,7 +11,7 @@ exports.storeData = async function () {
   //首页统计信息
   setInterval(() => {
     queryDetail.queryCount()
-  }, 1000)
+  }, 3000)
   //首页列表信息
   setInterval(() => {
     queryDetail.queryDataBlock(10, 1)
