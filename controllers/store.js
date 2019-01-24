@@ -202,6 +202,7 @@ async function failBlock(blockNum) {
 
 	butBlock = new butBlockModel()
     butBlock.block_height = blockNum
+    butBlock.create_time = new Date()
 	await butBlock.save()
     console.log("----failBlock()---33333--已记录下 blockNum:", blockNum, "time:", new Date().toLocaleString())
 
