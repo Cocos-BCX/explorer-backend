@@ -14,6 +14,7 @@ const EventEmitter = require('events').EventEmitter
 
 let lastestBlockNum		//最新区块高度
 let currBlockHeight		//当前区块高度
+let nodeErrCount = 0	//用于累计节点连续 异常次数，和 切换节点
 
 function getLastestBlockNum() {
 	return lastestBlockNum
@@ -82,6 +83,8 @@ exports.subscribeToBlocks = async function (ctx, next) {
 
 				//更新detail表 最新区块
                 await setLastestBlockNum(result.data.block_height)
+			} else {
+				console.log("---订阅返回异常，result:", result )
 			}
 		}
 	})
@@ -152,13 +155,16 @@ exports.Block = async function (ctx, next, length) {		//length:本次同步目�
                 console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
 				if (result.code === 1) {
 					await saveData(result, ctx, next, index)
+					resetNodeErrCount()
 				} else {
-                    console.log("入库Block(..)---333 获取区块失败 bN:", index, ",time:", new Date().toLocaleString())
+                    console.log("入库Block(..)---333 获取区块--失败 bN:", index, ",result.code:" + result.code + ",time:", new Date().toLocaleString())
+                    addnodeErrCount()
 					await exports.Block(ctx, next, index)
 				}
 			})
 			.catch(async err => {
 				console.log("入库Block(..)---444.1 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err)
+                addnodeErrCount()
 				await failBlock( index)
 			})
 	}
@@ -390,4 +396,29 @@ exports.setUser = async function (ctx, next) {
 		//     }).exec()
 		// }
 	})
+}
+
+
+//累加 节点出错次数
+function addnodeErrCount() {
+	setNodeErrCount( getNodeErrCount() + 1)
+	if (getNodeErrCount() > 50) {
+		//切换节点  清零
+        bcx.changeNode()
+        resetNodeErrCount()
+	}
+}
+
+//重置清零
+function resetNodeErrCount() {
+	setNodeErrCount(0)
+}
+
+
+function getNodeErrCount() {
+    return nodeErrCount
+}
+
+function setNodeErrCount(next) {
+    nodeErrCount = next
 }
