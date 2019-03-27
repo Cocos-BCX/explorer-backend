@@ -27,31 +27,26 @@ let node = bcxNodes[nodeIndex]
 
 module.exports = new BCX({
     default_ws_node: node.url,
-    ws_node_list: [
-        {
-            url: node.url,
-            name: node.name
-        }
-    ],
-    networks: [
-        {
-            core_asset: 'COCOS',
-            chain_id:
-                '53b98adf376459cc29e5672075ed0c0b1672ea7dce42b0b1fe5e021c02bda640'
-        }
-    ],
+    ws_node_list: [{
+        url: node.url,
+        name: node.name
+    }],
+    networks: [{
+        core_asset: 'COCOS',
+        chain_id: '53b98adf376459cc29e5672075ed0c0b1672ea7dce42b0b1fe5e021c02bda640'
+    }],
     faucet_url: 'http://' + node.ip + ':3000',
     auto_reconnect: true,
     worker: false
 })
 
-exports.changeNode = function() {
+exports.changeNode = function () {
     console.log('---changeNode---切换节点,time:', new Date())
 
     if (nodeIndex == bcxNodes.length - 1) {
         nodeIndex = 0
     } else {
-        nodeIndex += 2
+        nodeIndex += 1
         node = bcxNodes[nodeIndex]
     }
     console.log(
