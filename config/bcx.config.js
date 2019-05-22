@@ -1,26 +1,37 @@
 const bcx = require('../lib/bcx.min.js')
 
 let bcxNodes = []
+// bcxNodes.push({
+//     url: 'ws://47.93.62.96:8050',
+//     name: 'COCOS节点1',
+//     ip: '47.93.62.96'
+// })
+// bcxNodes.push({
+//     url: 'ws://39.96.33.61:8080',
+//     name: 'COCOS节点2',
+//     ip: '39.96.33.61'
+// })
+// bcxNodes.push({
+//     url: 'ws://39.96.29.40:8050',
+//     name: 'COCOS节点3',
+//     ip: '39.96.29.40'
+// })
+// bcxNodes.push({
+//     url: 'ws://39.106.126.54:8050',
+//     name: 'COCOS节点4',
+//     ip: '39.106.126.54'
+// })
 bcxNodes.push({
-    url: 'ws://47.93.62.96:8050',
-    name: 'COCOS节点1',
+    url: "ws://47.93.62.96:8049",
+    name: "COCOS3.0节点1",
     ip: '47.93.62.96'
 })
 bcxNodes.push({
-    url: 'ws://39.96.33.61:8080',
-    name: 'COCOS节点2',
-    ip: '39.96.33.61'
-})
-bcxNodes.push({
-    url: 'ws://39.96.29.40:8050',
-    name: 'COCOS节点3',
-    ip: '39.96.29.40'
-})
-bcxNodes.push({
-    url: 'ws://39.106.126.54:8050',
-    name: 'COCOS节点4',
+    url: "ws://39.106.126.54:8049",
+    name: "COCOS3.0节点2",
     ip: '39.106.126.54'
 })
+
 
 let nodeIndex = 0
 let node = bcxNodes[nodeIndex]
@@ -33,9 +44,9 @@ module.exports = new BCX({
     }],
     networks: [{
         core_asset: 'COCOS',
-        chain_id: '53b98adf376459cc29e5672075ed0c0b1672ea7dce42b0b1fe5e021c02bda640'
+        chain_id: 'b9e7cee4709ddaf08e3b7cba63b71c211c845e37c9bf2b865a7b2a592c8adb28'
     }],
-    faucet_url: 'http://' + node.ip + ':3000',
+    faucet_url: 'http://' + node.ip + ':8049',
     auto_reconnect: true,
     worker: false
 })
