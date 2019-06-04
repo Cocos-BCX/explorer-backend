@@ -132,34 +132,30 @@ async function toFetchBlock(ctx, next) {
 	}
 	ctx.blcok_length = currBlockHeight
 
-	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 10)) {
+	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 20)) {
 		await fetchBlock(ctx, next)
 	} else {
-		let num = (ctx.block_height - ctx.blcok_length) / 40
-		forkWork(ctx, next,0, num)
-		if (num >= 1) {
-			forkWork(ctx, next,1, num)
-			forkWork(ctx, next,2, num)
-			forkWork(ctx, next,3, num)
+		let num = (ctx.block_height - ctx.blcok_length) / 4
+		forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
+		if (num > 1){
+			let tmp1 = ctx.blcok_length
+			forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
+			forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
+			forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
 		}
 	}
 }
 
-async function forkWork(ctx, next, v, num) {
+async function forkWork(startNum, endNum, next) {
 
-	let startNum = v * num
-	let endNum = (v + 1) * num
-	console.log("----------------------------------------------------------------")
-	console.log("----------------------------------------------------------------:", startNum)
-	console.log("----------------------------------------------------------------:", endNum)
-	console.log("----------------------------------------------------------------")
-	for (var i = startNum; i <= endNum; i ++){
+	let num = (endNum - startNum) / 10			// 10个块为一批
+	for (var i = 0; i <= num; i ++){
 		let ctxTmp = {}
-		ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
-		if (ctxTmp.block_height > ctx.block_height) {
-			ctxTmp.block_height = ctx.block_height
+		ctxTmp.block_height = startNum + (i + 1) * 10
+		if (ctxTmp.block_height > endNum) {
+			ctxTmp.block_height = endNum
 		}
-		ctxTmp.blcok_length = ctx.blcok_length + i * 10
+		ctxTmp.blcok_length = startNum + i * 10
 		await fetchBlock(ctxTmp, next)
 	}
 }
