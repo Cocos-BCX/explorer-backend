@@ -7,7 +7,7 @@ if (process.env.NODE_ENV === 'released' || process.env.NODE_ENV === 'release') {
 	host = 'mongodb://root:xeJE0jWU@localhost/test'
 } else {
 	// host = 'mongodb://192.168.90.45/test'
-	host = 'mongodb://192.168.90.45/newTest'
+	host = 'mongodb://localhost/newTest'
 }
 
 module.exports = exports = host
