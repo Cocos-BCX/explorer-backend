@@ -14,6 +14,7 @@ const EventEmitter = require('events').EventEmitter
 let lastestBlockNum		//最新区块高度
 let currBlockHeight	= 0	//当前区块高度
 let nodeErrCount = 0	//用于累计节点连续 异常次数，和 切换节点
+let failedBlockData = []
 
 function getLastestBlockNum() {
 	return lastestBlockNum
@@ -99,6 +100,7 @@ async function failBlock(blockNum) {
 		return
 	}
 
+	failedBlockData.push(blockNum)
 	butBlock = new butBlockModel()
 	butBlock.block_height = blockNum
 	butBlock.create_time = new Date()
@@ -109,20 +111,20 @@ async function failBlock(blockNum) {
 /**
  * 处理failed block
  * */
-async function handleFailedBlockData () {
-	let butBlock = new butBlockModel()
-	let one = butBlock.findOne({})
-	if (one) {
-		let butBlocks = butBlock.find({})
-		for (var j = 0; j < butBlocks.length; j++) {
+async function handleFailedBlockData() {
+	if (failedBlockData && failedBlockData.length){
+		for (var j = 0; j < failedBlockData.length; j++) {
 			await bcx
-				.queryBlock({block: butBlocks[j].block_height})
+				.queryBlock({block: failedBlockData[j].block_height})
 				.then(async result => {
 					console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
 					if (result.code === 1) {
 						let blockModels = new blockModel(result.data)
 						blockModels.save()
+						butBlock = new butBlockModel()
 						butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
+						failedBlockData.splice(j, 1)
+						j--
 						resetNodeErrCount()
 					}
 				})
@@ -134,11 +136,6 @@ async function handleFailedBlockData () {
  * 同步链上新一批区块到db
  * */
 exports.syncBlockData = async function () {
-
-	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
-	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
-	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
-	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
     let ctx = {}
 	let next = {}
     let sub_block_height = getLastestBlockNum()
@@ -161,18 +158,19 @@ exports.syncBlockData = async function () {
                 detail: 'detail',
             })
             await block_detail.save()
-			await toFetchBlock(ctx, next)
-        } else {
-			await toFetchBlock(ctx, next)
         }
+		await toFetchBlock(ctx, next)
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
     }
-	// await handleFailedBlockData()
+	await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
 async function toFetchBlock(ctx, next) {
+	console.log("------------------------------------------------------------------------------------")
+	console.log("666666666666666666666666666666666666666666666666666666666666666666666666666666666666")
+	console.log("------------------------------------------------------------------------------------")
 	//重复查BlockDetail表----待处理
 	let currBlockHeight = getCurrBlockHeight()
 	console.log("查detail最新高度---222 sub_block_height:", ctx.block_height, ",time:", new Date().toLocaleString())
@@ -226,28 +224,6 @@ async function toFetchBlock(ctx, next) {
 				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			})
 	}
-	/*else if (ctx.block_height - ctx.blcok_length >= 3200 ) {
-		let num = (ctx.block_height - ctx.blcok_length) / 16
-		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分16个任务
-		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
-		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
-		let job4 = forkWork(ctx.blcok_length + 4*num, ctx.blcok_length + 5*num, next)
-		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next)
-		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next)
-		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.blcok_length + 8*num, next)
-		let job8 = forkWork(ctx.blcok_length + 8*num, ctx.blcok_length + 9*num, next)
-		let job9 = forkWork(ctx.blcok_length + 9*num, ctx.blcok_length + 10*num, next)
-		let job10 = forkWork(ctx.blcok_length + 10*num, ctx.blcok_length + 11*num, next)
-		let job11 = forkWork(ctx.blcok_length + 11*num, ctx.blcok_length + 12*num, next)
-		let job12 = forkWork(ctx.blcok_length + 12*num, ctx.blcok_length + 13*num, next)
-		let job13 = forkWork(ctx.blcok_length + 13*num, ctx.blcok_length + 14*num, next)
-		let job14 = forkWork(ctx.blcok_length + 14*num, ctx.blcok_length + 15*num, next)
-		let job15 = forkWork(ctx.blcok_length + 15*num, ctx.blcok_length + 16*num, next)
-		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7, job8, job9, job10, job11, job12, job13, job14, job15])
-			.then((result) => {console.log("job success ....")})
-			.catch((error) => {console.log(error)})
-	}*/
 }
 
 async function forkWork(startNum, endNum, next) {
@@ -298,6 +274,7 @@ exports.Block = async function (ctx, next, length, resultBlocks) {		//length:本
 				}
 			})
 			.catch(async err => {
+				console.error(err)
 				console.log("入库Block(..)---444.1 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err)
                 addnodeErrCount()
 				await failBlock(index)
@@ -492,10 +469,6 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
 		// console.log("saveData()-44444更新detail blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
 		//区块去重
 		// await query.subscribeToBlocks(ctx, next)
-	} else {
-		for (var i = 0; i < blocks.length; i++) {
-			failBlock(blockNum + i)
-		}
 	}
 }
 
