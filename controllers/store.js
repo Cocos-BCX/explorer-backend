@@ -241,7 +241,8 @@ async function saveTransactions(blocks, ctx, next, blockNum) {
 		trx_ids = [],
 		trans = [],
 		transfers = [],
-		createUsers = []
+		createUsers = [],
+		realUsers = []
 	if (blocks && blocks.length > 0) {
 
 		for (var i = 0; i < blocks.length; i++) {
@@ -306,7 +307,7 @@ async function saveTransactions(blocks, ctx, next, blockNum) {
 		}
 
 		if (createUsers && createUsers.length > 0) {
-			await saveUsers(createUsers, next)
+			await saveUsers(createUsers, next, realUsers)
 		}
 		console.log("saveData()-2222交易入库-start blockNum:", blockNum, "end blockNum:", (blockNum + blocks.length), "交易数量:", transactions.length, ",time:", new Date().toLocaleString())
 	}
@@ -334,8 +335,8 @@ function onInsert(err, docs) {
 }
 
 //保存Users
-async function saveUsers(users, next) {
-	let realUsers = []
+async function saveUsers(users, next, realUsers) {
+
 	for (var i = 0; i < users.length; i++) {
 		let ctx = users[i]
 		await ctx.users.map(async (item, index) => {
@@ -371,7 +372,9 @@ async function saveUsers(users, next) {
 									result.data.counts = count.data
 								},
 							})
-							realUsers.push(result.data)
+							// realUsers.push(result.data)
+							let userModels = new UserModel(result.data)
+							userModels.save()
 						}
 					},
 				})
@@ -379,8 +382,10 @@ async function saveUsers(users, next) {
 		})
 	}
 
-	let userModels = new UserModel()
-	userModels.collection.insert(realUsers, onInsert)
+	// if (realUsers && realUsers.length){
+	// 	let userModels = new UserModel()
+	// 	userModels.collection.insert(realUsers, onInsert)
+	// }
 }
 
 //保存区块
