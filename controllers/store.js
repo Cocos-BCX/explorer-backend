@@ -132,16 +132,16 @@ async function toFetchBlock(ctx, next) {
 	}
 	ctx.blcok_length = currBlockHeight
 
-	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 20)) {
+	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 10)) {
 		await fetchBlock(ctx, next)
 	} else {
-		for (var i = 0; i <= (ctx.block_height - ctx.blcok_length) / 20; i++){
+		for (var i = 0; i <= (ctx.block_height - ctx.blcok_length) / 10; i++){
 			let ctxTmp = {}
-			ctxTmp.block_height = ctx.blcok_length + (i + 1) * 20
+			ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
 			if (ctxTmp.block_height > ctx.block_height) {
 				ctxTmp.block_height = ctx.block_height
 			}
-			ctxTmp.blcok_length = ctx.blcok_length + i * 20
+			ctxTmp.blcok_length = ctx.blcok_length + i * 10
 			await fetchBlock(ctxTmp, next)
 		}
 	}
