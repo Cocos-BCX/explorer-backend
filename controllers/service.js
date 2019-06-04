@@ -8,6 +8,7 @@ exports.storeData = async function () {
   storeBlock.initStore();
   storeBlock.subscribeToBlocks(ctx, next);
   storeBlock.syncBlockData();
+  storeBlock.handleFailedBlockData();
   //首页统计信息
   setInterval(() => {
     queryDetail.queryCount()

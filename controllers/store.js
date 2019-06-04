@@ -88,6 +88,48 @@ exports.subscribeToBlocks = async function (ctx, next) {
 
 }
 
+//处理请求失败的   记录出错blockNum ，跳过
+async function failBlock(blockNum) {
+
+	console.log("----failBlock()---11111--获取区块失败-----blockNum:", blockNum, "time:", new Date().toLocaleString())
+
+	let butBlockdb = await butBlockModel.findOne({ block_height: blockNum})
+	if (butBlockdb && butBlockdb.block_height == blockNum ) {
+		console.log("----failBlock()---22222--blockNum有记录过，跳过-----blockNum:", blockNum, "time:", new Date().toLocaleString())
+		return
+	}
+
+	butBlock = new butBlockModel()
+	butBlock.block_height = blockNum
+	butBlock.create_time = new Date()
+	await butBlock.save()
+	console.log("----failBlock()---33333--已记录下 blockNum:", blockNum, "time:", new Date().toLocaleString())
+}
+
+/**
+ * 处理failed block
+ * */
+async function handleFailedBlockData () {
+	let butBlock = new butBlockModel()
+	let one = butBlock.findOne({})
+	if (one) {
+		let butBlocks = butBlock.find({})
+		for (var j = 0; j < butBlocks.length; j++) {
+			await bcx
+				.queryBlock({block: butBlocks[j].block_height})
+				.then(async result => {
+					console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
+					if (result.code === 1) {
+						let blockModels = new blockModel(result.data)
+						blockModels.save()
+						butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
+						resetNodeErrCount()
+					}
+				})
+		}
+	}
+}
+
 /**
  * 同步链上新一批区块到db
  * */
@@ -121,6 +163,7 @@ exports.syncBlockData = async function () {
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
     }
+	await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
@@ -136,7 +179,18 @@ async function toFetchBlock(ctx, next) {
 
 	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 20)) {
 		await fetchBlock(ctx, next)
-	} else if (ctx.block_height - ctx.blcok_length >= 20 && ctx.block_height - ctx.blcok_length < 800) {
+	} else if (ctx.block_height - ctx.blcok_length >= 20 && ctx.block_height - ctx.blcok_length < 40) {
+		let num = (ctx.block_height - ctx.blcok_length) / 2
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)
+		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
+		await Promise.all([job0, job1])
+			.then((result) => {console.log("job success ....")})
+			.catch((error) => {
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				console.error(error)
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+			})
+	}else if (ctx.block_height - ctx.blcok_length >= 40 && ctx.block_height - ctx.blcok_length < 800) {
 		let num = (ctx.block_height - ctx.blcok_length) / 4
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
@@ -144,8 +198,12 @@ async function toFetchBlock(ctx, next) {
 		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
 		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
-			.catch((error) => {console.log(error)})
-	} else if (ctx.block_height - ctx.blcok_length >= 800 && ctx.block_height - ctx.blcok_length < 3200) {
+			.catch((error) => {
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				console.error(error)
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+			})
+	} else if (ctx.block_height - ctx.blcok_length >= 800 ){//&& ctx.block_height - ctx.blcok_length < 3200) {
 		let num = (ctx.block_height - ctx.blcok_length) / 8
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分8个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
@@ -157,8 +215,13 @@ async function toFetchBlock(ctx, next) {
 		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.blcok_length + 8*num, next)
 		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7])
 			.then((result) => {console.log("job success ....")})
-			.catch((error) => {console.log(error)})
-	}  else if (ctx.block_height - ctx.blcok_length >= 3200 ) {
+			.catch((error) => {
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+				console.error(error)
+				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+			})
+	}
+	/*else if (ctx.block_height - ctx.blcok_length >= 3200 ) {
 		let num = (ctx.block_height - ctx.blcok_length) / 16
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分16个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
@@ -179,7 +242,7 @@ async function toFetchBlock(ctx, next) {
 		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7, job8, job9, job10, job11, job12, job13, job14, job15])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {console.log(error)})
-	}
+	}*/
 }
 
 async function forkWork(startNum, endNum, next) {
@@ -235,24 +298,6 @@ exports.Block = async function (ctx, next, length, resultBlocks) {		//length:本
 				await failBlock(index)
 			})
 	}
-}
-
-//处理请求失败的   记录出错blockNum ，跳过
-async function failBlock(blockNum) {
-
-    console.log("----failBlock()---11111--获取区块失败-----blockNum:", blockNum, "time:", new Date().toLocaleString())
-
-    let butBlockdb = await butBlockModel.findOne({ block_height: blockNum})
-	if (butBlockdb && butBlockdb.block_height == blockNum ) {
-        console.log("----failBlock()---22222--blockNum有记录过，跳过-----blockNum:", blockNum, "time:", new Date().toLocaleString())
-		return
-	}
-
-	butBlock = new butBlockModel()
-    butBlock.block_height = blockNum
-    butBlock.create_time = new Date()
-	await butBlock.save()
-    console.log("----failBlock()---33333--已记录下 blockNum:", blockNum, "time:", new Date().toLocaleString())
 }
 
 //检查区块是否存在
@@ -444,7 +489,7 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
 		// await query.subscribeToBlocks(ctx, next)
 	} else {
 		for (var i = 0; i < blocks.length; i++) {
-			failBlock(ctx, next, (blockNum + i))
+			failBlock(blockNum + i)
 		}
 	}
 }
