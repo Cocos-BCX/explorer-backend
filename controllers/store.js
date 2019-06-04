@@ -134,6 +134,11 @@ async function handleFailedBlockData () {
  * 同步链上新一批区块到db
  * */
 exports.syncBlockData = async function () {
+
+	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
+	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
+	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
+	console.log("888888888888888888888888888888888888888888888888888888888888888888888888888888888888888")
     let ctx = {}
 	let next = {}
     let sub_block_height = getLastestBlockNum()
@@ -163,7 +168,7 @@ exports.syncBlockData = async function () {
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
     }
-	await handleFailedBlockData()
+	// await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
