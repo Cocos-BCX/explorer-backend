@@ -114,7 +114,7 @@ async function failBlock(blockNum) {
 async function handleFailedBlockData() {
 	butBlock = new butBlockModel()
 	if (!failedBlockData){
-		failedBlockData = butBlock.find({})
+		failedBlockData = butBlock.find()
 	}
 	if (failedBlockData && failedBlockData.length){
 		for (var j = 0; j < failedBlockData.length; j++) {
