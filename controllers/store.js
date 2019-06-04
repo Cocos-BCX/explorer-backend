@@ -100,7 +100,7 @@ async function failBlock(blockNum) {
 		return
 	}
 
-	failedBlockData.push(blockNum)
+	failedBlockData.push({"block_height":blockNum})
 	butBlock = new butBlockModel()
 	butBlock.block_height = blockNum
 	butBlock.create_time = new Date()
@@ -112,6 +112,10 @@ async function failBlock(blockNum) {
  * 处理failed block
  * */
 async function handleFailedBlockData() {
+	butBlock = new butBlockModel()
+	if (!failedBlockData){
+		failedBlockData = butBlock.find({})
+	}
 	if (failedBlockData && failedBlockData.length){
 		for (var j = 0; j < failedBlockData.length; j++) {
 			await bcx
@@ -121,7 +125,7 @@ async function handleFailedBlockData() {
 					if (result.code === 1) {
 						let blockModels = new blockModel(result.data)
 						blockModels.save()
-						butBlock = new butBlockModel()
+
 						butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
 						failedBlockData.splice(j, 1)
 						j--
@@ -171,6 +175,8 @@ exports.syncBlockData = async function () {
 				await setCurrBlockHeight(currBlockHeight + k * 800)
 				await toFetchBlock(ctxTmp, next)
 			}
+		}else{
+			await toFetchBlock(ctx, next)
 		}
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
