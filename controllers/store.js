@@ -140,7 +140,7 @@ async function toFetchBlock(ctx, next) {
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
 		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
 		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
-		Promise.all([job0, job1, job2, job3])
+		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {console.log(error)})
 	}
