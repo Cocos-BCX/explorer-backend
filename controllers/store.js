@@ -112,10 +112,10 @@ async function failBlock(blockNum) {
  * 处理failed block
  * */
 async function handleFailedBlockData() {
-	butBlock = new butBlockModel()
-	if (!failedBlockData){
-		failedBlockData = butBlock.find()
-	}
+	// butBlock = new butBlockModel()
+	// if (!failedBlockData){
+	// 	failedBlockData = butBlock.find()
+	// }
 	if (failedBlockData && failedBlockData.length){
 		for (var j = 0; j < failedBlockData.length; j++) {
 			await bcx
@@ -126,7 +126,7 @@ async function handleFailedBlockData() {
 						let blockModels = new blockModel(result.data)
 						blockModels.save()
 
-						butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
+						// butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
 						failedBlockData.splice(j, 1)
 						j--
 						resetNodeErrCount()
@@ -181,7 +181,7 @@ exports.syncBlockData = async function () {
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
 	}
-	handleFailedBlockData()
+	await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
@@ -203,7 +203,7 @@ async function toFetchBlock(ctx, next) {
 	} else if (ctx.block_height - ctx.blcok_length >= 20 && ctx.block_height - ctx.blcok_length < 40) {
 		let num = (ctx.block_height - ctx.blcok_length) / 2
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)
-		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
+		let job1 = forkWork(ctx.blcok_length + num, ctx.block_height, next)
 		await Promise.all([job0, job1])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
@@ -216,7 +216,7 @@ async function toFetchBlock(ctx, next) {
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
 		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
+		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.block_height, next)
 		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
@@ -233,7 +233,7 @@ async function toFetchBlock(ctx, next) {
 		let job4 = forkWork(ctx.blcok_length + 4*num, ctx.blcok_length + 5*num, next)
 		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next)
 		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next)
-		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.blcok_length + 8*num, next)
+		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.block_height, next)
 		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
