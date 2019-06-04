@@ -11,9 +11,8 @@ const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
 // const workerService = require("../work_job/worker")
 
-
 let lastestBlockNum		//最新区块高度
-let currBlockHeight		//当前区块高度
+let currBlockHeight	= 0	//当前区块高度
 let nodeErrCount = 0	//用于累计节点连续 异常次数，和 切换节点
 
 function getLastestBlockNum() {
@@ -68,9 +67,7 @@ exports.initStore = async function () {
 	}
 
 	console.log("----initStore()--最新区块高度:", getLastestBlockNum(), ",当前区块高度:", getCurrBlockHeight())
-
 }
-
 
 exports.subscribeToBlocks = async function (ctx, next) {
 	//监听区块信息
@@ -91,7 +88,6 @@ exports.subscribeToBlocks = async function (ctx, next) {
 
 }
 
-
 /**
  * 同步链上新一批区块到db
  * */
@@ -101,9 +97,7 @@ exports.syncBlockData = async function () {
     let sub_block_height = getLastestBlockNum()
     ctx.block_height = sub_block_height
     console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:",  getCurrBlockHeight() ," lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
-
     if (ctx.block_height) {
-
         if (!sub_block_height) {	//BlockDetail 没数据
             let blocks = await blockModel
                 .aggregate([{
@@ -120,41 +114,58 @@ exports.syncBlockData = async function () {
                 detail: 'detail',
             })
             await block_detail.save()
+			await toFetchBlock(ctx, next)
         } else {
-
-            //重复查BlockDetail表----待处理
-            let currBlockHeight = getCurrBlockHeight()
-            console.log("查detail最新高度---222 sub_block_height:", sub_block_height, ",time:", new Date().toLocaleString())
-             if (!currBlockHeight) {  //结束本次同步
-             	console.log("---syncBlockData()--currBlockHeight:为0")
-                // return
-            }
-            ctx.blcok_length = currBlockHeight
-            if (ctx.blcok_length < ctx.block_height) {
-                for (var i = ctx.blcok_length; i < ctx.block_height; i++) {			//此处换成 多线程并发
-                    await exports.Block(ctx, next, 1 + i)	//同步下一个区块
-
-                    // let worker = workerService.getWork()
-                    // let obj = {"ctx":ctx, "next":ctx, "blockNum": i+1 }
-                    // worker.postMessage(obj)
-                }
-            }
+			await toFetchBlock(ctx, next)
         }
     }
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
+async function toFetchBlock(ctx, next) {
+	//重复查BlockDetail表----待处理
+	let currBlockHeight = getCurrBlockHeight()
+	console.log("查detail最新高度---222 sub_block_height:", ctx.block_height, ",time:", new Date().toLocaleString())
+	if (!currBlockHeight) {  //结束本次同步
+		console.log("---syncBlockData()--currBlockHeight:为0")
+		// return
+	}
+	ctx.blcok_length = currBlockHeight
+
+	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 10)) {
+		await fetchBlock(ctx, next)
+	} else {
+		for (var i = 0; i <= (ctx.block_height - ctx.blcok_length) / 10; i++){
+			let ctxTmp = {}
+			ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
+			if (ctxTmp.block_height > ctx.block_height) {
+				ctxTmp.block_height = ctx.block_height
+			}
+			ctxTmp.blcok_length = ctx.blcok_length + i * 10
+			await fetchBlock(ctxTmp, next)
+		}
+	}
+}
+
+async function fetchBlock(ctx, next) {
+	var resultBlocks = []
+	for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
+		await exports.Block(ctx, next, 1 + i, resultBlocks)	//同步下一个区块
+	}
+	await saveData(resultBlocks, ctx, next, ctx.blcok_length)
+}
+
 //入库block区块
-exports.Block = async function (ctx, next, length) {		//length:本次同步目标块
+exports.Block = async function (ctx, next, length, resultBlocks) {		//length:本次同步目标块
     console.log("入库Block(..)---11111 bN:", length,",最新bN:", ctx.block_height, ",time:", new Date().toLocaleString())
     let index = length
-	if (index < ctx.block_height) {
+	if (index <= ctx.block_height) {
 		await bcx
 			.queryBlock({block: index})
 			.then(async result => {
                 console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
 				if (result.code === 1) {
-					await saveData(result, ctx, next, index)
+					resultBlocks.push(result.data)
 					resetNodeErrCount()
 				} else {
                     console.log("入库Block(..)---333 获取区块--失败 bN:", index, ",result.code:" + result.code + ",time:", new Date().toLocaleString())
@@ -165,35 +176,10 @@ exports.Block = async function (ctx, next, length) {		//length:本次同步目�
 			.catch(async err => {
 				console.log("入库Block(..)---444.1 获取区块err,bN:", index, ",time:", new Date().toLocaleString(),",err:", err)
                 addnodeErrCount()
-				await failBlock( index)
+				await failBlock(index)
 			})
 	}
-
-	// for (let i = ctx.blcok_length + 1; i < ctx.block_height; i++) {
-	//     (async (i) => {
-	//     timer = setInterval(async () => {
-	//         await bcx
-	//             .queryBlock({
-	//                 block: i
-	//             })
-	//             .then(async result => {
-	//                 if (result.code === 1) {
-	//                     await saveData(result, ctx, next, i)
-	//                 } else {
-	//                     let fail = new FailSchema()
-	//                     await fail.save({
-	//                         index: i
-	//                     })
-	//                 }
-	//             })
-	//             .catch(async err => {
-	//                 await failBlock(ctx, next, i)
-	//             })
-	//     }, 1)
-	//     })(i);
-	// }
 }
-
 
 //处理请求失败的   记录出错blockNum ，跳过
 async function failBlock(blockNum) {
@@ -211,109 +197,204 @@ async function failBlock(blockNum) {
     butBlock.create_time = new Date()
 	await butBlock.save()
     console.log("----failBlock()---33333--已记录下 blockNum:", blockNum, "time:", new Date().toLocaleString())
-
 }
 
-//保存数据
-async function saveData(result, ctx, next, blockNum) {
-    console.log("saveData()-0000 进入--bN:", blockNum, ",time:", new Date().toLocaleString())
-	let block = await blockModel
-		.findOne({
-			block_height: result.data && result.data.block_height,
-		})
-		.hint({
-			block_height: 1,
-			block_id: 1,
-			timestamp: 1,
-		})
-		.exec()
-	console.log("saveData()-1111入库前检查区块是否存在,bN:", blockNum, ",time:", new Date().toLocaleString())
-	if (block) {
-        console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blockNum, ",time:", new Date().toLocaleString())
-        return
-    }
+//检查区块是否存在
+async function existBlock(blocks, blockNum){
 
-	let transactions = [],
-		trx_ids = []
-	if (result.data && result.data.transactions && result.data.transactions.length) {	//区块中有交易
-		result.data.transactions.forEach(async item => {		//此处考虑交易批量入库
-			transactions.push({
-				trx_id: item.trx_id,
+	for (var i = 0; i < blocks.length; i++) {
+		let block = await blockModel
+			.findOne({
+				block_height: blocks[i] && blocks[i].block_height,
 			})
-			item.block = blockNum
-			let trans = new transModel(item)
-			await trans.save()
-			//交易去重
-			// await query.subscribeToTrans(ctx, next)
-			if (item.parse_ops && item.parse_ops.length) {
-				ctx.trx_id = trans.trx_id
-				item.parse_ops.forEach(async option => {
-					let users = []
-					let parse_ops = option && option.parse_operations
-					//新建账户
-					if (option.type === 'account_create') {
-						users = [{
-							id: parse_ops.new_account,
-							type: 'account_create',
-						}, ]
-						ctx.users = users
-						//用户创建时间
-						ctx.create_time = item.expiration
-						await exports.setUser(ctx, next)
-					}
-					//交易
-					if (option.type === 'transfer') {
-						// users = [...new Set([parse_ops.from || '', parse_ops.to || ''])].filter(Boolean);
-						if (parse_ops.from) {
-							users.push({
-								id: parse_ops.from,
-								type: 'transfer_from',
-							})
-						}
-						if (parse_ops.to) {
-							users.push({
-								id: parse_ops.to,
-								type: 'transfer_to',
-							})
-						}
-						option.trx_id = trans.trx_id
-						let transfer = new transferModel(option)
-						await transfer.save()
-						//转账去重
-						// await query.subscribeToTransfer(ctx, next)
-						// ctx.users = users
-						// await exports.setUser(ctx, next)
+			.hint({
+				block_height: 1,
+				block_id: 1,
+				timestamp: 1,
+			})
+			.exec()
+		console.log("saveData()-1111入库前检查区块是否存在,bN:", (blockNum + i), ",time:", new Date().toLocaleString())
+		if (block) {
+			console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", (blockNum + i), ",time:", new Date().toLocaleString())
+			blocks.splice(i, 1)
+			i--
+		}
+	}
+}
+
+//保存交易
+async function saveTransactions(blocks, ctx, next, blockNum) {
+	let transactions = [],
+		trx_ids = [],
+		trans = [],
+		transfers = [],
+		createUsers = []
+	if (blocks && blocks.length > 0) {
+
+		for (var i = 0; i < blocks.length; i++) {
+			if (blocks[i].transactions && blocks[i].transactions.length > 0) {	//区块中有交易
+				blocks[i].transactions.forEach(async item => {
+					transactions.push({
+						trx_id: item.trx_id,
+					})
+					item.block = blockNum
+					trans.push(item)
+
+					//交易去重
+					// await query.subscribeToTrans(ctx, next)
+					if (item.parse_ops && item.parse_ops.length) {
+						ctx.trx_id = item.trx_id
+						item.parse_ops.forEach(async option => {
+							let users = []
+							let parse_ops = option && option.parse_operations
+							//新建账户
+							if (option.type === 'account_create') {
+								users = [{
+									id: parse_ops.new_account,
+									type: 'account_create',
+								},]
+								ctx.users = users
+								//用户创建时间
+								ctx.create_time = item.expiration
+								createUsers.push(ctx)
+							}
+							//交易
+							if (option.type === 'transfer') {
+								// users = [...new Set([parse_ops.from || '', parse_ops.to || ''])].filter(Boolean);
+								if (parse_ops.from) {
+									users.push({
+										id: parse_ops.from,
+										type: 'transfer_from',
+									})
+								}
+								if (parse_ops.to) {
+									users.push({
+										id: parse_ops.to,
+										type: 'transfer_to',
+									})
+								}
+								option.trx_id = item.trx_id
+								transfers.push(option)
+							}
+						})
 					}
 				})
 			}
-		})
-        console.log("saveData()-2222交易入库-blockNum:", blockNum, ",交易数量:", result.data.transactions.length, ",time:",  new Date().toLocaleString())
+		}
 
+		if (trans && trans.length > 0) {
+			let transModels = new transModel()
+			await transModels.collection.insert(trans, onInsert)
+		}
+
+		if (transfers && transfers.length > 0) {
+			let transferModels = new transferModel()
+			await transferModels.collection.insert(transfers, onInsert)
+		}
+
+		if (createUsers && createUsers.length > 0) {
+			await saveUsers(createUsers, next)
+		}
+		console.log("saveData()-2222交易入库-start blockNum:", blockNum, "end blockNum:", (blockNum + blocks.length), "交易数量:", transactions.length, ",time:", new Date().toLocaleString())
 	}
-	if (result.data) {
-		// result.data.transactions = transactions || []
-		// transactions = []
-		// if (result.data.witness) {
-		//     ctx.users = [{
-		//         id: result.data.witness,
-		//         type: 'witness'
-		//     }]
-		//     await exports.setUser(ctx, next)
-		// }
-		let block = new blockModel(result.data)
-        block.create_time = new Date()
-        console.log("saveData()-2222.5555入库--前-----blockNum:", blockNum, "time:",  new Date().toLocaleString())
-        await block.save()
-        console.log("saveData()-3333入库成功-blockNum:", blockNum, "time:",  new Date().toLocaleString())
-		await setCurrBlockHeight(blockNum)
-		console.log("saveData()-44444更新detail blockNum:", blockNum, "time:",  new Date().toLocaleString())
+}
+
+function onInsertBlocks(err, docs) {
+	if (err) {
+		if (docs && docs.ops && docs.ops.length > 0 ){
+			for (var i = 0; i < docs.ops.length; i++) {
+				console.info('insert block to mongodb failed, block height:', docs.ops[i].block_height);
+				failBlock(docs.ops[i].block_height)
+			}
+		}
+	} else {
+		console.info('insert block to mongodb sucess, block nums:', docs.ops.length);
+	}
+}
+
+function onInsert(err, docs) {
+	if (err) {
+		console.info("insert data to mongodb failed, error: ", err.toString());
+	} else {
+		console.info("insert data to mongodb sucess...");
+	}
+}
+
+//保存Users
+async function saveUsers(users, next) {
+	let realUsers = []
+	for (var i = 0; i < users.length; i++) {
+		let ctx = users[i]
+		await ctx.users.map(async (item, index) => {
+			let user = await UserModel.findOne({
+				user_name: item.id,
+			}).exec()
+			if (!user) {
+				await bcx.queryAccountInfo({
+					account: item.id,
+					callback: async result => {
+						if (result.locked || !result.data || !result.data.account) {
+						} else {
+							//用户名作索引用
+							result.data.user_name = result.data.account.name
+							result.data.trx_ids = [{
+								trx_id: ctx.trx_id,
+							},]
+							//数组的话最后清除
+							if (index === ctx.users.length - 1) {
+								ctx.trx_id = null
+							}
+							//有时间就存上
+							if (ctx.create_time) {
+								result.data.create_time = moment(ctx.create_time)
+								ctx.create_time = null
+							}
+
+							//查询用户余额
+							await bcx.queryAccountAllBalances({
+								unit: '',
+								account: item.id,
+								callback: async count => {
+									result.data.counts = count.data
+								},
+							})
+							realUsers.push(result.data)
+						}
+					},
+				})
+			}
+		})
+	}
+
+	let userModels = new UserModel()
+	userModels.collection.insert(realUsers, onInsert)
+}
+
+//保存区块
+async function saveBlocks(blocks, ctx, next, blockNum) {
+	if (blocks && blocks.length > 0) {
+		let blockModels = new blockModel()
+		console.log("saveData()-2222.5555入库--前-----start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
+		blockModels.collection.insert(blocks, onInsertBlocks)
+		console.log("saveData()-3333入库成功-start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
+		await setCurrBlockHeight((blockNum + blocks.length))
+		console.log("saveData()-44444更新detail blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
 		//区块去重
 		// await query.subscribeToBlocks(ctx, next)
 	} else {
-		exports.failBlock(ctx, next, blockNum)
+		for (var i = 0; i < blocks.length; i++) {
+			failBlock(ctx, next, (blockNum + i))
+		}
 	}
 }
-// }
+
+//保存数据
+async function saveData(blocks, ctx, next, blockNum) {
+	console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
+	existBlock(blocks, blockNum)
+	saveTransactions(blocks, ctx, next, blockNum)
+	saveBlocks(blocks, ctx, next, blockNum)
+}
 
 //用户表
 exports.setUser = async function (ctx, next) {
@@ -340,16 +421,7 @@ exports.setUser = async function (ctx, next) {
 							result.data.create_time = moment(ctx.create_time)
 							ctx.create_time = null
 						}
-						// result.data.trans_counts = {
-						//     from_num: 0,
-						//     to_num: 0
-						// }
-						// if (item.type === 'transfer_from') {
-						//     result.data.trans_counts.from_num++
-						// }
-						// if (item.type === 'transfer_to') {
-						//     result.data.trans_counts.to_num++
-						// }
+
 						//查询用户余额
 						await bcx.queryAccountAllBalances({
 							unit: '',
@@ -364,40 +436,8 @@ exports.setUser = async function (ctx, next) {
 				},
 			})
 		}
-		// } else {
-		//     await bcx.queryUserOperations({
-		//         account: user.id,
-		//         limit: 0,
-		//         callback: async operas => {}
-		//     })
-		//     await bcx.queryAccountAllBalances({
-		//         unit: '',
-		//         account: user.user_name,
-		//         callback: async count => {
-		//             user.counts = count.data
-		//         }
-		//     })
-		//     // if (item.type === 'transfer_from') {
-		//     //     user.trans_counts.from_num++
-		//     // }
-		//     // if (item.type === 'transfer_to') {
-		//     //     user.trans_counts.to_num++
-		//     // }
-		//     if (ctx.trx_id) {
-		//         user.trx_ids.push({
-		//             trx_id: ctx.trx_id
-		//         })
-		//     }
-		//     ctx.trx_id = null
-		//     await UserModel.findOneAndUpdate({
-		//         user_name: user.user_name
-		//     }, {
-		//         counts: user.counts,
-		//     }).exec()
-		// }
 	})
 }
-
 
 //累加 节点出错次数
 function addnodeErrCount() {
@@ -413,7 +453,6 @@ function addnodeErrCount() {
 function resetNodeErrCount() {
 	setNodeErrCount(0)
 }
-
 
 function getNodeErrCount() {
     return nodeErrCount
