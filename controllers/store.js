@@ -135,13 +135,13 @@ async function toFetchBlock(ctx, next) {
 	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 10)) {
 		await fetchBlock(ctx, next)
 	} else {
-		for (var i = 0; i <= (ctx.block_height - ctx.blcok_length) / 10; i++){
+		for (var i = 0; i <= (ctx.block_height - ctx.blcok_length) / 30; i++){
 			let ctxTmp = {}
-			ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
+			ctxTmp.block_height = ctx.blcok_length + (i + 1) * 30
 			if (ctxTmp.block_height > ctx.block_height) {
 				ctxTmp.block_height = ctx.block_height
 			}
-			ctxTmp.blcok_length = ctx.blcok_length + i * 10
+			ctxTmp.blcok_length = ctx.blcok_length + i * 30
 			await fetchBlock(ctxTmp, next)
 		}
 	}
