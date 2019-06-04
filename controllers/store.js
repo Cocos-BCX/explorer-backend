@@ -147,8 +147,12 @@ async function toFetchBlock(ctx, next) {
 
 async function forkWork(ctx, next, v, num) {
 
-	let startNum = v * 10 * num
-	let endNum = (v + 1) * 10 * num
+	let startNum = v * num
+	let endNum = (v + 1) * num
+	console.log("----------------------------------------------------------------")
+	console.log("----------------------------------------------------------------:", startNum)
+	console.log("----------------------------------------------------------------:", endNum)
+	console.log("----------------------------------------------------------------")
 	for (var i = startNum; i <= endNum; i ++){
 		let ctxTmp = {}
 		ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
