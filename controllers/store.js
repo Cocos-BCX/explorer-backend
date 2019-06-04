@@ -135,16 +135,21 @@ async function toFetchBlock(ctx, next) {
 	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 10)) {
 		await fetchBlock(ctx, next)
 	} else {
-		let num = (ctx.block_height - ctx.blcok_length) / 10 / 4
-		forkWork(ctx, next,0)
-		forkWork(ctx, next, num)
-		forkWork(ctx, next,2 * num)
-		forkWork(ctx, next,3 * num)
+		let num = (ctx.block_height - ctx.blcok_length) / 40
+		forkWork(ctx, next,0, num)
+		if (num >= 1) {
+			forkWork(ctx, next,1, num)
+			forkWork(ctx, next,2, num)
+			forkWork(ctx, next,3, num)
+		}
 	}
 }
 
-async function forkWork(ctx, next, v) {
-	for (var i = v * 10; i <= (ctx.block_height - ctx.blcok_length) / 10; i ++){
+async function forkWork(ctx, next, v, num) {
+
+	let startNum = v * 10 * num
+	let endNum = (v + 1) * 10 * num
+	for (var i = startNum; i <= endNum; i ++){
 		let ctxTmp = {}
 		ctxTmp.block_height = ctx.blcok_length + (i + 1) * 10
 		if (ctxTmp.block_height > ctx.block_height) {
