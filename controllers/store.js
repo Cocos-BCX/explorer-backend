@@ -143,7 +143,7 @@ async function toFetchBlock(ctx, next) {
 		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {console.log(error)})
-	} else {
+	} else if (ctx.block_height - ctx.blcok_length > 2000) {
 		let num = (ctx.block_height - ctx.blcok_length) / 8
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分8个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
