@@ -137,34 +137,38 @@ async function toFetchBlock(ctx, next) {
 	} else {
 		let num = (ctx.block_height - ctx.blcok_length) / 4
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
-		if (num > 1){
-			let tmp1 = ctx.blcok_length
-			let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
-			let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-			let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
-			Promise.all([job0, job1, job2, job3]).
-			then((result) => {console.log("job success ....")}).
-			catch((error) => {console.log(error)})
-		}
+		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
+		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
+		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
+		Promise.all([job0, job1, job2, job3])
+			.then((result) => {console.log("job success ....")})
+			.catch((error) => {console.log(error)})
 	}
 }
 
 async function forkWork(startNum, endNum, next) {
 
 	let num = (endNum - startNum) / 10			// 10个块为一批
-	for (var i = 0; i <= num; i ++){
-		let ctxTmp = {}
-		ctxTmp.block_height = startNum + (i + 1) * 10
-		if (ctxTmp.block_height > endNum) {
-			ctxTmp.block_height = endNum
+	if (num > 0) {
+		for (var i = 0; i <= num; i ++){
+			let ctxTmp = {}
+			ctxTmp.block_height = startNum + (i + 1) * 10
+			if (ctxTmp.block_height > endNum) {
+				ctxTmp.block_height = endNum
+			}
+			ctxTmp.blcok_length = startNum + i * 10
+			await fetchBlock(ctxTmp, next)
 		}
-		ctxTmp.blcok_length = startNum + i * 10
+	}else {
+		let ctxTmp = {}
+		ctxTmp.block_height = endNum
+		ctxTmp.blcok_length = startNum
 		await fetchBlock(ctxTmp, next)
 	}
 }
 
 async function fetchBlock(ctx, next) {
-	var resultBlocks = []
+	let resultBlocks = []
 	for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
 		await exports.Block(ctx, next, 1 + i, resultBlocks)	//同步下一个区块
 	}
