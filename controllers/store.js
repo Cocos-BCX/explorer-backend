@@ -136,12 +136,13 @@ async function toFetchBlock(ctx, next) {
 		await fetchBlock(ctx, next)
 	} else {
 		let num = (ctx.block_height - ctx.blcok_length) / 4
-		forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
 		if (num > 1){
 			let tmp1 = ctx.blcok_length
-			forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
-			forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-			forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
+			let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
+			let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
+			let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
+			Promise.all([job0, job1, job2, job3])
 		}
 	}
 }
