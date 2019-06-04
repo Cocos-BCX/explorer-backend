@@ -53,7 +53,7 @@ module.exports = new BCX({
         // chain_id: 'b9e7cee4709ddaf08e3b7cba63b71c211c845e37c9bf2b865a7b2a592c8adb28'
         // chain_id: '92fbb36866f823592e183bf129c9cc9011378686dc099224b7d98d5042313096'
     }],
-    faucet_url: 'http://' + node.ip + ':8049',
+    faucet_url: 'http://47.93.62.96:8041',
     auto_reconnect: true,
     worker: false
 })
