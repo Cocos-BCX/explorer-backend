@@ -139,30 +139,42 @@ exports.syncBlockData = async function () {
     let ctx = {}
 	let next = {}
     let sub_block_height = getLastestBlockNum()
-    ctx.block_height = sub_block_height
-    console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:",  getCurrBlockHeight() ," lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
-    if (ctx.block_height) {
-        if (!sub_block_height) {	//BlockDetail 没数据
-            let blocks = await blockModel
-                .aggregate([{
-                    $group: {
-                        _id: 'block_height',
-                        max_value: {
-                            $max: '$block_height',
-                        },
-                    },
-                }, ])
-                .exec()
-            let block_detail = new BlockDetailModel({
-                block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
-                detail: 'detail',
-            })
-            await block_detail.save()
-        }
-		await toFetchBlock(ctx, next)
+	let currBlockHeight = getCurrBlockHeight()
+	ctx.block_height = sub_block_height
+	console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:",  currBlockHeight, " lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
+	if (ctx.block_height) {
+		if (!sub_block_height) {	//BlockDetail 没数据
+			let blocks = await blockModel
+				.aggregate([{
+					$group: {
+						_id: 'block_height',
+						max_value: {
+							$max: '$block_height',
+						},
+					},
+				}, ])
+				.exec()
+			let block_detail = new BlockDetailModel({
+				block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
+				detail: 'detail',
+			})
+			await block_detail.save()
+		}
+		let nums = (ctx.block_height - currBlockHeight) / 800
+		if (nums){
+			for (var k = 0; k <= nums; k++) {
+				let ctxTmp = {}
+				ctxTmp.block_height = currBlockHeight + (k + 1) * 800
+				if (ctxTmp.block_height > ctx.block_height){
+					ctxTmp.block_height = ctx.block_height
+				}
+				await setCurrBlockHeight(currBlockHeight + k * 800)
+				await toFetchBlock(ctxTmp, next)
+			}
+		}
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
-    }
+	}
 	await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
