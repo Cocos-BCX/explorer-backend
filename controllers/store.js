@@ -118,6 +118,8 @@ exports.syncBlockData = async function () {
         } else {
 			await toFetchBlock(ctx, next)
         }
+		await setCurrBlockHeight(ctx.block_height)
+		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
     }
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
@@ -166,7 +168,7 @@ async function toFetchBlock(ctx, next) {
 		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next)
 		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next)
 		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.blcok_length + 8*num, next)
-		let job8 = forkWork(ctx.blcok_length + 8*num, ctx.blcok_length + 9*num, next)		
+		let job8 = forkWork(ctx.blcok_length + 8*num, ctx.blcok_length + 9*num, next)
 		let job9 = forkWork(ctx.blcok_length + 9*num, ctx.blcok_length + 10*num, next)
 		let job10 = forkWork(ctx.blcok_length + 10*num, ctx.blcok_length + 11*num, next)
 		let job11 = forkWork(ctx.blcok_length + 11*num, ctx.blcok_length + 12*num, next)
@@ -436,8 +438,8 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
 		console.log("saveData()-2222.5555入库--前-----start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
 		blockModels.collection.insert(blocks, onInsertBlocks)
 		console.log("saveData()-3333入库成功-start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
-		await setCurrBlockHeight((blockNum + blocks.length))
-		console.log("saveData()-44444更新detail blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
+		// await setCurrBlockHeight((blockNum + blocks.length))
+		// console.log("saveData()-44444更新detail blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
 		//区块去重
 		// await query.subscribeToBlocks(ctx, next)
 	} else {
