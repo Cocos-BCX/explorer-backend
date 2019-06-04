@@ -157,8 +157,8 @@ async function toFetchBlock(ctx, next) {
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {console.log(error)})
 	}  else if (ctx.block_height - ctx.blcok_length >= 3200 ) {
-		let num = (ctx.block_height - ctx.blcok_length) / 8
-		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分8个任务
+		let num = (ctx.block_height - ctx.blcok_length) / 16
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分16个任务
 		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
 		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
 		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
@@ -166,7 +166,7 @@ async function toFetchBlock(ctx, next) {
 		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next)
 		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next)
 		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.blcok_length + 8*num, next)
-		let job8 = forkWork(ctx.blcok_length + 8*num, ctx.blcok_length + 9*num, next)		//分8个任务
+		let job8 = forkWork(ctx.blcok_length + 8*num, ctx.blcok_length + 9*num, next)		
 		let job9 = forkWork(ctx.blcok_length + 9*num, ctx.blcok_length + 10*num, next)
 		let job10 = forkWork(ctx.blcok_length + 10*num, ctx.blcok_length + 11*num, next)
 		let job11 = forkWork(ctx.blcok_length + 11*num, ctx.blcok_length + 12*num, next)
