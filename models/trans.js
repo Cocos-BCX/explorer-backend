@@ -64,7 +64,7 @@ TransSchema.index({
 //   sparse: true
 // });
 TransSchema.index({
-  'date': -1,
+  'date': 1,
 }, {
   sparse: true
 });
