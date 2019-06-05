@@ -176,7 +176,9 @@ exports.syncBlockData = async function () {
 				await toFetchBlock(ctxTmp, next)
 			}
 		}else{
-			await toFetchBlock(ctx, next)
+			let ctxTmp = {}
+			ctxTmp.block_height = ctx.block_height
+			await toFetchBlock(ctxTmp, next)
 		}
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
