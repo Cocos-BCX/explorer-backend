@@ -531,9 +531,11 @@ async function saveTransactions(blocks, ctx, next, blockNum) {
 
     if (trans && trans.length > 0) {
       let transModels = new transModel()
-      if (trans.parse_ops.length) {
-        trans.block = trans.parse_ops[0].block_num
-      }
+	  for (var i = 0; i < trans.length; i++){
+		  if (trans[i].parse_ops && trans[i].parse_ops.length) {
+			  trans[i].block = trans[i].parse_ops[0].block_num
+		  }
+	  }
       await transModels.collection.insert(trans, onInsert)
     }
 
