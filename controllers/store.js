@@ -194,11 +194,11 @@ exports.syncBlockData = async function () {
 			await block_detail.save()
 		}
 		let nums = parseInt((ctx.block_height - currBlockHeight) / 800)
-		if (nums){
-			for (var k = 0; k <= nums; k++) {
+		if (nums > 0){
+			for (var k = 0; k < nums; k++) {
 				let ctxTmp = {}
 				ctxTmp.block_height = currBlockHeight + (k + 1) * 800
-				if (ctxTmp.block_height > ctx.block_height){
+				if (k == nums - 1){
 					ctxTmp.block_height = ctx.block_height
 				}
 				await setCurrBlockHeight(currBlockHeight + k * 800)
@@ -307,10 +307,10 @@ async function toFetchBlock(ctx, next) {
 async function forkWork(startNum, endNum, next) {
 	let num = parseInt((endNum - startNum) / 10)			// 10个块为一批
 	if (num > 0) {
-		for (var i = 0; i <= num; i ++){
+		for (var i = 0; i < num; i ++){
 			let ctxTmp = {}
 			ctxTmp.block_height = startNum + (i + 1) * 10
-			if (ctxTmp.block_height > endNum) {
+			if (i == num - 1) {
 				ctxTmp.block_height = endNum
 			}
 			ctxTmp.blcok_length = startNum + i * 10
@@ -326,9 +326,15 @@ async function forkWork(startNum, endNum, next) {
 
 async function fetchBlock(ctx, next) {
 	let resultBlocks = []
+
+	console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	console.log(ctx.blcok_length)
+	console.log(ctx.block_height)
+	console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
 		await exports.Block(ctx, next, 1 + i, resultBlocks)	//同步下一个区块
 	}
+
 	await saveData(resultBlocks, ctx, next, ctx.blcok_length)
 }
 
@@ -362,6 +368,7 @@ exports.Block = async function (ctx, next, length, resultBlocks) {		//length:本
 //检查区块是否存在
 async function existBlock(blocks, blockNum){
 
+	let isa = false
 	for (var i = 0; i < blocks.length; i++) {
 		let block = await blockModel
 			.findOne({
@@ -373,13 +380,20 @@ async function existBlock(blocks, blockNum){
 				timestamp: 1,
 			})
 			.exec()
-		console.log("saveData()-1111入库前检查区块是否存在,bN:", (blockNum + i), ",time:", new Date().toLocaleString())
+		console.log("saveData()-1111入库前检查区块是否存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
 		if (block) {
-			console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", (blockNum + i), ",time:", new Date().toLocaleString())
+			if (isa) {
+				console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+				console.log(blocks)
+				console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+			}
+			isa = false
+			console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
 			blocks.splice(i, 1)
 			i--
 		}
 	}
+	console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 }
 
 //保存交易
@@ -555,6 +569,7 @@ async function saveData(blocks, ctx, next, blockNum) {
 	existBlock(blocks, blockNum)
 	saveTransactions(blocks, ctx, next, blockNum)
 	saveBlocks(blocks, ctx, next, blockNum)
+	blocks = null
 }
 
 //用户表
