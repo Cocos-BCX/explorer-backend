@@ -15,6 +15,7 @@ let lastestBlockNum		//最新区块高度
 let currBlockHeight	= 0	//当前区块高度
 let nodeErrCount = 0	//用于累计节点连续 异常次数，和 切换节点
 let failedBlockData = []
+let needCheckBlockData = []
 
 function getLastestBlockNum() {
 	return lastestBlockNum
@@ -117,6 +118,27 @@ async function failBlock(blockNum) {
 }
 
 /**
+ * 处理need check block data
+ * */
+async function handleNeedCheckBlockData() {
+	if (!needCheckBlockData || needCheckBlockData.length <= 0){
+		let blockModels = new blockModel()
+		for (var j = 0; j < needCheckBlockData.length; j++) {
+			let start = needCheckBlockData[j].start
+			let num = needCheckBlockData[j].num
+			for (var i = start; i <= num; i++) {
+				let block = blockModels.find({
+					block_height: i
+				})
+				if (block) {
+					failBlock(i)
+				}
+			}
+		}
+	}
+}
+
+/**
  * 处理failed block
  * */
 async function handleFailedBlockData() {
@@ -176,7 +198,7 @@ exports.syncBlockData = async function () {
 			})
 			await block_detail.save()
 		}
-		let nums = (ctx.block_height - currBlockHeight) / 800
+		let nums = parseInt((ctx.block_height - currBlockHeight) / 800)
 		if (nums){
 			for (var k = 0; k <= nums; k++) {
 				let ctxTmp = {}
@@ -195,7 +217,8 @@ exports.syncBlockData = async function () {
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
 	}
-	handleFailedBlockData()
+	// await handleNeedCheckBlockData()
+	// await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
@@ -215,9 +238,13 @@ async function toFetchBlock(ctx, next) {
 	if ((ctx.block_height > ctx.blcok_length) && (ctx.block_height - ctx.blcok_length < 20)) {
 		await fetchBlock(ctx, next)
 	} else if (ctx.block_height - ctx.blcok_length >= 20 && ctx.block_height - ctx.blcok_length < 40) {
-		let num = (ctx.block_height - ctx.blcok_length) / 2
-		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)
-		let job1 = forkWork(ctx.blcok_length + num, ctx.block_height, next)
+		let num = parseInt((ctx.block_height - ctx.blcok_length) / 2)
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job1 = forkWork(ctx.blcok_length + num, ctx.block_height, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
 		await Promise.all([job0, job1])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
@@ -226,11 +253,19 @@ async function toFetchBlock(ctx, next) {
 				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			})
 	}else if (ctx.block_height - ctx.blcok_length >= 40 && ctx.block_height - ctx.blcok_length < 800) {
-		let num = (ctx.block_height - ctx.blcok_length) / 4
-		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分4个任务
-		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
-		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.block_height, next)
+		let num = parseInt((ctx.block_height - ctx.blcok_length) / 4)
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})		//分4个任务
+		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.block_height, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
 		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
@@ -239,15 +274,31 @@ async function toFetchBlock(ctx, next) {
 				console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 			})
 	} else if (ctx.block_height - ctx.blcok_length >= 800 ){//&& ctx.block_height - ctx.blcok_length < 3200) {
-		let num = (ctx.block_height - ctx.blcok_length) / 8
-		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next)		//分8个任务
-		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next)
-		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next)
-		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next)
-		let job4 = forkWork(ctx.blcok_length + 4*num, ctx.blcok_length + 5*num, next)
-		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next)
-		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next)
-		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.block_height, next)
+		let num = parseInt((ctx.block_height - ctx.blcok_length) / 8)
+		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})		//分8个任务
+		let job1 = forkWork(ctx.blcok_length + num, ctx.blcok_length + 2*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job2 = forkWork(ctx.blcok_length + 2*num, ctx.blcok_length + 3*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.blcok_length + 4*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job4 = forkWork(ctx.blcok_length + 4*num, ctx.blcok_length + 5*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job5 = forkWork(ctx.blcok_length + 5*num, ctx.blcok_length + 6*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job6 = forkWork(ctx.blcok_length + 6*num, ctx.blcok_length + 7*num, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
+		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.block_height, next).then().catch((err) =>{
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+		})
 		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7])
 			.then((result) => {console.log("job success ....")})
 			.catch((error) => {
@@ -259,8 +310,7 @@ async function toFetchBlock(ctx, next) {
 }
 
 async function forkWork(startNum, endNum, next) {
-
-	let num = (endNum - startNum) / 10			// 10个块为一批
+	let num = parseInt((endNum - startNum) / 10)			// 10个块为一批
 	if (num > 0) {
 		for (var i = 0; i <= num; i ++){
 			let ctxTmp = {}
@@ -302,7 +352,7 @@ exports.Block = async function (ctx, next, length, resultBlocks) {		//length:本
 				} else {
                     console.log("入库Block(..)---333 获取区块--失败 bN:", index, ",result.code:" + result.code + ",time:", new Date().toLocaleString())
                     addnodeErrCount()
-					await exports.Block(ctx, next, index)
+					await exports.Block(ctx, next, index, resultBlocks)
 				}
 			})
 			.catch(async err => {
