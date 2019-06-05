@@ -130,7 +130,7 @@ async function handleNeedCheckBlockData() {
 				let block = blockModels.find({
 					block_height: i
 				})
-				if (block) {
+				if (!block) {
 					failBlock(i)
 				}
 			}
