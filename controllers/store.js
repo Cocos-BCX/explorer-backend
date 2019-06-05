@@ -127,12 +127,7 @@ async function handleNeedCheckBlockData() {
 			let start = needCheckBlockData[j].start
 			let num = needCheckBlockData[j].num
 			for (var i = start; i <= num; i++) {
-				let block = blockModels.find({
-					block_height: i
-				})
-				if (!block) {
-					failBlock(i)
-				}
+				failBlock(i)
 			}
 		}
 	}
@@ -143,9 +138,9 @@ async function handleNeedCheckBlockData() {
  * */
 async function handleFailedBlockData() {
 	let failedBlockDatas = getFailedBlockData()
-	butBlock = new butBlockModel()
+	// let butBlock = new butBlockModel()
 	if (!failedBlockDatas || failedBlockDatas.length <= 0){
-		failedBlockDatas = butBlock.find()
+		failedBlockDatas = await butBlockModel.find()
 	}
 
 	if (failedBlockDatas && failedBlockDatas.length > 0){
@@ -216,9 +211,9 @@ exports.syncBlockData = async function () {
 		}
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
+		await handleNeedCheckBlockData()
+		await handleFailedBlockData()
 	}
-	// await handleNeedCheckBlockData()
-	// await handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
@@ -240,10 +235,10 @@ async function toFetchBlock(ctx, next) {
 	} else if (ctx.block_height - ctx.blcok_length >= 20 && ctx.block_height - ctx.blcok_length < 40) {
 		let num = parseInt((ctx.block_height - ctx.blcok_length) / 2)
 		let job0 = forkWork(ctx.blcok_length, ctx.blcok_length + num, next).then().catch((err) =>{
-			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":(ctx.block_height - num - ctx.blcok_length)})
 		})
 		let job1 = forkWork(ctx.blcok_length + num, ctx.block_height, next).then().catch((err) =>{
-			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":(ctx.block_height - num - ctx.blcok_length)})
 		})
 		await Promise.all([job0, job1])
 			.then((result) => {console.log("job success ....")})
@@ -264,7 +259,7 @@ async function toFetchBlock(ctx, next) {
 			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
 		})
 		let job3 = forkWork(ctx.blcok_length + 3*num, ctx.block_height, next).then().catch((err) =>{
-			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":(ctx.block_height - 3*num - ctx.blcok_length)})
 		})
 		await Promise.all([job0, job1, job2, job3])
 			.then((result) => {console.log("job success ....")})
@@ -297,7 +292,7 @@ async function toFetchBlock(ctx, next) {
 			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
 		})
 		let job7 = forkWork(ctx.blcok_length + 7*num, ctx.block_height, next).then().catch((err) =>{
-			needCheckBlockData.push({"start":ctx.blcok_length,"num":num})
+			needCheckBlockData.push({"start":ctx.blcok_length,"num":(ctx.block_height - 7*num - ctx.blcok_length)})
 		})
 		await Promise.all([job0, job1, job2, job3, job4, job5, job6, job7])
 			.then((result) => {console.log("job success ....")})
