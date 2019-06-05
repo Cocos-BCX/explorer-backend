@@ -116,7 +116,7 @@ async function handleFailedBlockData() {
 	// if (!failedBlockData){
 	// 	failedBlockData = butBlock.find()
 	// }
-	if (failedBlockData && failedBlockData.length){
+	if (failedBlockData && failedBlockData.length > 0){
 		for (var j = 0; j < failedBlockData.length; j++) {
 			await bcx
 				.queryBlock({block: failedBlockData[j].block_height})
@@ -181,7 +181,7 @@ exports.syncBlockData = async function () {
 		await setCurrBlockHeight(ctx.block_height)
 		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
 	}
-	await handleFailedBlockData()
+	handleFailedBlockData()
     setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
 }
 
