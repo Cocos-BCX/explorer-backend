@@ -63,11 +63,6 @@ TransSchema.index({
 // }, {
 //   sparse: true
 // });
-TransSchema.index({
-  'date': -1,
-}, {
-  sparse: true
-});
 
 TransSchema.index({
   'block_num': 1,
