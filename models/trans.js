@@ -58,14 +58,9 @@ TransSchema.index({
   sparse: true
 });
 
-// TransSchema.index({
-//   'parse_ops': 1,
-// }, {
-//   sparse: true
-// });
 
 TransSchema.index({
-  'block_num': 1,
+  'block': 1,
 }, {
   sparse: true
 });
