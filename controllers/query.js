@@ -127,7 +127,7 @@ exports.queryDataBlock = async function name(limit, page) {
 //查询首页交易列表
 exports.queryAllTrans = async function (limit, page) {
   let skip = limit * (page - 1)
-  let trans = await transModel
+  let trans = await transferModel
     .find()
     .hint({
       date: 1
