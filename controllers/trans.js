@@ -79,11 +79,8 @@ exports.queryTranferBlock = async function (ctx, next) {
       limit = parseInt(ctx.query.limit);
     if (page <= 0) page = 1;
     let skip = limit * (page - 1);
-    let transfer = await transferModel.find().hint({
-      date: 1
-    }).limit(limit).skip(skip).sort({
-      date: -1,
-      block_num: -1
+    let transfer = await transferModel.find().limit(limit).skip(skip).sort({
+      date: -1
     }).exec()
     let count = await transferModel.count().exec();
     ctx.body = {
