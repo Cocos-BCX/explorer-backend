@@ -24,6 +24,14 @@ function getCurrBlockHeight() {
 	return currBlockHeight
 }
 
+function getFailedBlockData() {
+	return failedBlockData
+}
+
+function setFailedBlockData(blockNum) {
+	return failedBlockData.push({"block_height":blockNum})
+}
+
 async function setLastestBlockNum(bn) {
 	if (bn == undefined) {
 		console.log("---setLastestBlockNum---bn undefined, time:", new Date().toLocaleString())
@@ -100,7 +108,7 @@ async function failBlock(blockNum) {
 		return
 	}
 
-	failedBlockData.push({"block_height":blockNum})
+	setFailedBlockData(blockNum)
 	butBlock = new butBlockModel()
 	butBlock.block_height = blockNum
 	butBlock.create_time = new Date()
@@ -112,22 +120,26 @@ async function failBlock(blockNum) {
  * 处理failed block
  * */
 async function handleFailedBlockData() {
-	// butBlock = new butBlockModel()
-	// if (!failedBlockData){
-	// 	failedBlockData = butBlock.find()
-	// }
-	if (failedBlockData && failedBlockData.length > 0){
-		for (var j = 0; j < failedBlockData.length; j++) {
+	let failedBlockDatas = getFailedBlockData()
+	butBlock = new butBlockModel()
+	if (!failedBlockDatas || failedBlockDatas.length <= 0){
+		failedBlockDatas = butBlock.find()
+	}
+
+	if (failedBlockDatas && failedBlockDatas.length > 0){
+		for (var j = 0; j < failedBlockDatas.length; j++) {
 			await bcx
-				.queryBlock({block: failedBlockData[j].block_height})
+				.queryBlock({block: failedBlockDatas[j].block_height})
 				.then(async result => {
-					console.log("入库Block(..)---222 获取到区块bN:", index, ",code:",result.code,",time:", new Date().toLocaleString())
+					console.log("....................................................................................")
+					console.log("入库Block(..)---222 获取到区块bN:", failedBlockDatas[j].block_height, ",code:",result.code,",time:", new Date().toLocaleString())
+					console.log("....................................................................................")
 					if (result.code === 1) {
 						let blockModels = new blockModel(result.data)
 						blockModels.save()
 
 						// butBlock.findByIdAndRemove({block_height:butBlocks[j].block_height})
-						failedBlockData.splice(j, 1)
+						failedBlockDatas.splice(j, 1)
 						j--
 						resetNodeErrCount()
 					}
