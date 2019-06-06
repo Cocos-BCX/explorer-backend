@@ -35,7 +35,6 @@ exports.queryCount = async function () {
       $lt: end,
     },
   }).count().exec()
-  console.log(transModel.count());
   console.log("start:", start)
   console.log("end  :", end)
   console.log("tran_num:", tran_num)
@@ -466,7 +465,6 @@ exports.searchMoney = async function (ctx, next) {
       account: item.user_name,
       callback: async count => {
         item.counts = count.data
-        console.log(item.counts)
         await UserModel.findOneAndUpdate({
           user_name: item.user_name,
         }, {
