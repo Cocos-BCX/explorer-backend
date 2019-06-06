@@ -29,13 +29,11 @@ exports.queryCount = async function () {
     new Date(new Date().toLocaleDateString()).getTime() -
     24 * 60 * 60 * 1000
   );
-  let tran_num = await transModel.find({
-    expiration: {
+  let tran_num = await transferModel.find({
+    date: {
       $gte: start,
       $lt: end,
     },
-  }).hint({
-    expiration: 1
   }).count().exec()
 
   console.log("start:", start)
