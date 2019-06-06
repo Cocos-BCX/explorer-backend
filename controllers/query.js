@@ -66,7 +66,7 @@ exports.queryCount = async function () {
     }
   }
 
-  trans = tran_num / 5 || 0
+  trans = parseInt(tran_num / 5) || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
