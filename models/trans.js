@@ -11,7 +11,7 @@ const TransSchema = new Schema({
     type: Number,
   },
   expiration: {
-    type: Date,
+    type: Sting,
   },
   operations: [
     [
