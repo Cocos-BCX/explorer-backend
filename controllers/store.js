@@ -183,52 +183,52 @@ async function handleFailedBlockData() {
  * 同步链上新一批区块到db
  * */
 exports.syncBlockData = async function () {
-    let ctx = {}
-	let next = {}
-    let sub_block_height = getLastestBlockNum()
-	let currBlockHeight = getCurrBlockHeight()
-	ctx.block_height = sub_block_height
-	console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:",  currBlockHeight, " lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
-	if (ctx.block_height) {
-		if (!sub_block_height) {	//BlockDetail 没数据
-			let blocks = await blockModel
-				.aggregate([{
-					$group: {
-						_id: 'block_height',
-						max_value: {
-							$max: '$block_height',
-						},
-					},
-				}, ])
-				.exec()
-			let block_detail = new BlockDetailModel({
-				block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
-				detail: 'detail',
-			})
-			await block_detail.save()
-		}
-		let nums = parseInt((ctx.block_height - currBlockHeight) / 800)
-		if (nums > 0){
-			for (var k = 0; k < nums; k++) {
-				let ctxTmp = {}
-				ctxTmp.block_height = currBlockHeight + (k + 1) * 800
-				if (k == nums - 1){
-					ctxTmp.block_height = ctx.block_height
-				}
-				await setCurrBlockHeight(currBlockHeight + k * 800)
-				await toFetchBlock(ctxTmp, next)
-			}
-		}else{
-			let ctxTmp = {}
-			ctxTmp.block_height = ctx.block_height
-			await toFetchBlock(ctxTmp, next)
-		}
-		await setCurrBlockHeight(ctx.block_height)
-		console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:",  new Date().toLocaleString())
-		await handleNeedCheckBlockData()
-		await handleFailedBlockData()
-	}
-    setTimeout(exports.syncBlockData, 3000, "sync_block_job")	//同步完一轮后
+  let ctx = {}
+  let next = {}
+  let sub_block_height = getLastestBlockNum()
+  let currBlockHeight = getCurrBlockHeight()
+  ctx.block_height = sub_block_height
+  console.log("-----syncBlockData()--查detail最新高度---11111 ----currBlockHeight:", currBlockHeight, " lastestBlockNum:", sub_block_height, ",time:", new Date().toLocaleString())
+  if (ctx.block_height) {
+    if (!sub_block_height) { //BlockDetail 没数据
+      let blocks = await blockModel
+        .aggregate([{
+          $group: {
+            _id: 'block_height',
+            max_value: {
+              $max: '$block_height',
+            },
+          },
+        }, ])
+        .exec()
+      let block_detail = new BlockDetailModel({
+        block_height: (blocks && blocks[0] && blocks[0].max_value) || 0,
+        detail: 'detail',
+      })
+      await block_detail.save()
+    }
+    let nums = parseInt((ctx.block_height - currBlockHeight) / 800)
+    if (nums > 0) {
+      for (var k = 0; k < nums; k++) {
+        let ctxTmp = {}
+        ctxTmp.block_height = currBlockHeight + (k + 1) * 800
+        if (k == nums - 1) {
+          ctxTmp.block_height = ctx.block_height
+        }
+        await setCurrBlockHeight(currBlockHeight + k * 800)
+        await toFetchBlock(ctxTmp, next)
+      }
+    } else {
+      let ctxTmp = {}
+      ctxTmp.block_height = ctx.block_height
+      await toFetchBlock(ctxTmp, next)
+    }
+    await setCurrBlockHeight(ctx.block_height)
+    console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:", new Date().toLocaleString())
+    await handleNeedCheckBlockData()
+    await handleFailedBlockData()
+  }
+  setTimeout(exports.syncBlockData, 3000, "sync_block_job") //同步完一轮后
 }
 
 async function toFetchBlock(ctx, next) {
@@ -367,37 +367,37 @@ async function toFetchBlock(ctx, next) {
 }
 
 async function forkWork(startNum, endNum, next) {
-	let num = parseInt((endNum - startNum) / 10)			// 10个块为一批
-	if (num > 0) {
-		for (var i = 0; i < num; i ++){
-			let ctxTmp = {}
-			ctxTmp.block_height = startNum + (i + 1) * 10
-			if (i == num - 1) {
-				ctxTmp.block_height = endNum
-			}
-			ctxTmp.blcok_length = startNum + i * 10
-			await fetchBlock(ctxTmp, next)
-		}
-	}else {
-		let ctxTmp = {}
-		ctxTmp.block_height = endNum
-		ctxTmp.blcok_length = startNum
-		await fetchBlock(ctxTmp, next)
-	}
+  let num = parseInt((endNum - startNum) / 10) // 10个块为一批
+  if (num > 0) {
+    for (var i = 0; i < num; i++) {
+      let ctxTmp = {}
+      ctxTmp.block_height = startNum + (i + 1) * 10
+      if (i == num - 1) {
+        ctxTmp.block_height = endNum
+      }
+      ctxTmp.blcok_length = startNum + i * 10
+      await fetchBlock(ctxTmp, next)
+    }
+  } else {
+    let ctxTmp = {}
+    ctxTmp.block_height = endNum
+    ctxTmp.blcok_length = startNum
+    await fetchBlock(ctxTmp, next)
+  }
 }
 
 async function fetchBlock(ctx, next) {
-	let resultBlocks = []
+  let resultBlocks = []
 
-	console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	console.log(ctx.blcok_length)
-	console.log(ctx.block_height)
-	console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-	for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-		await exports.Block(ctx, next, 1 + i, resultBlocks)	//同步下一个区块
-	}
+  console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  console.log(ctx.blcok_length)
+  console.log(ctx.block_height)
+  console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
+    await exports.Block(ctx, next, 1 + i, resultBlocks) //同步下一个区块
+  }
 
-	await saveData(resultBlocks, ctx, next, ctx.blcok_length)
+  await saveData(resultBlocks, ctx, next, ctx.blcok_length)
 }
 
 async function fetchBlock(ctx, next) {
@@ -438,34 +438,34 @@ exports.Block = async function (ctx, next, length, resultBlocks) { //length:本�
 }
 
 //检查区块是否存在
-async function existBlock(blocks, blockNum){
+async function existBlock(blocks, blockNum) {
 
-	let isa = false
-	for (var i = 0; i < blocks.length; i++) {
-		let block = await blockModel
-			.findOne({
-				block_height: blocks[i] && blocks[i].block_height,
-			})
-			.hint({
-				block_height: 1,
-				block_id: 1,
-				timestamp: 1,
-			})
-			.exec()
-		console.log("saveData()-1111入库前检查区块是否存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
-		if (block) {
-			if (isa) {
-				console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
-				console.log(blocks)
-				console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
-			}
-			isa = false
-			console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
-			blocks.splice(i, 1)
-			i--
-		}
-	}
-	console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+  let isa = false
+  for (var i = 0; i < blocks.length; i++) {
+    let block = await blockModel
+      .findOne({
+        block_height: blocks[i] && blocks[i].block_height,
+      })
+      .hint({
+        block_height: 1,
+        block_id: 1,
+        timestamp: 1,
+      })
+      .exec()
+    console.log("saveData()-1111入库前检查区块是否存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
+    if (block) {
+      if (isa) {
+        console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+        console.log(blocks)
+        console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
+      }
+      isa = false
+      console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
+      blocks.splice(i, 1)
+      i--
+    }
+  }
+  console.log("KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK")
 }
 
 //保存交易
@@ -531,11 +531,12 @@ async function saveTransactions(blocks, ctx, next, blockNum) {
 
     if (trans && trans.length > 0) {
       let transModels = new transModel()
-	  for (var i = 0; i < trans.length; i++){
-		  if (trans[i].parse_ops && trans[i].parse_ops.length) {
-			  trans[i].block = trans[i].parse_ops[0].block_num
-		  }
-	  }
+      for (var i = 0; i < trans.length; i++) {
+        if (trans[i].parse_ops && trans[i].parse_ops.length) {
+          trans[i].block = trans[i].parse_ops[0].block_num
+          // trans[i].date = trans[i].parse_ops[0].date
+        }
+      }
       await transModels.collection.insert(trans, onInsert)
     }
 
@@ -641,11 +642,11 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
 
 //保存数据
 async function saveData(blocks, ctx, next, blockNum) {
-	console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
-	existBlock(blocks, blockNum)
-	saveTransactions(blocks, ctx, next, blockNum)
-	saveBlocks(blocks, ctx, next, blockNum)
-	blocks = null
+  console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
+  existBlock(blocks, blockNum)
+  saveTransactions(blocks, ctx, next, blockNum)
+  saveBlocks(blocks, ctx, next, blockNum)
+  blocks = null
 }
 
 //用户表
