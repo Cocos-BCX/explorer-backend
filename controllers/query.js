@@ -26,8 +26,8 @@ exports.queryCount = async function () {
   let start = moment(new Date().getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
   let tran_num = await transModel.find({
     expiration: {
-      $gte: start,
-      $lt: end,
+      $gte: "2019-06-04T16:00:00.000Z",
+      $lt: "2019-06-05T16:00:00.000Z",
     },
   }).count().exec()
 
