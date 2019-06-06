@@ -31,8 +31,8 @@ exports.queryCount = async function () {
   );
   let tran_num = await transModel.find({
     expiration: {
-      $gte: start,
-      // $lt: end,
+      // $gte: start,
+      $lt: new Date(),
     },
   }).count().exec()
 
