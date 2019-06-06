@@ -22,8 +22,8 @@ exports.queryCount = async function () {
   //     nodes = result.data.nodes.length || 0
   //   }
   // })
-  let end = new Date(moment(new Date().getTime() - 24 * 60 * 60 * 1000).format('YYYY-MM-DD'))
-  let start = new Date(moment(new Date().getTime() - 2 * 24 * 60 * 60 * 1000).format('YYYY-MM-DD'))
+  let end = moment(new Date().getTime() - 24 * 60 * 60 * 1000).format('YYYY-MM-DD').toISOString()
+  let start = moment(new Date().getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
   let tran_num = await transModel.find({
     expiration: {
       $gte: start,
