@@ -22,10 +22,10 @@ exports.queryCount = async function () {
   //     nodes = result.data.nodes.length || 0
   //   }
   // })
-  let start = new Date(
+  let end = new Date(
     new Date(new Date().toLocaleDateString()).getTime()
   )
-  let end = new Date(
+  let start = new Date(
     new Date(new Date().toLocaleDateString()).getTime() -
     24 * 60 * 60 * 1000
   );
