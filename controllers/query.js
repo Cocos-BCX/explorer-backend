@@ -22,19 +22,18 @@ exports.queryCount = async function () {
   //     nodes = result.data.nodes.length || 0
   //   }
   // })
-  let start = util.getLastDay()
-  let end = util.getToday()
-  let tran_num = await transferModel.find({
-    date: {
-      $gte: start,
-      $lt: end,
-    },
-  })
+  let end = moment(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString()
+  let start = moment(new Date().getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  let tran_num = await transModel.find({
+    // expiration: {
+    //   $gte: "2019-06-04T16:00:00.000Z",
+    //   $lt: "2019-06-05T16:00:00.000Z",
+    // },
+  }).count().exec()
+
   console.log("start:", start)
   console.log("end  :", end)
-  console.log("tran_num:", tran_num.length)
-  console.log(tran_num[0])
-  console.log(tran_num[tran_num.length - 1])
+  console.log("tran_num:", tran_num)
   let tps = await blockModel
     .findOne({
       block_height: detail.block_height || 0,
@@ -66,7 +65,8 @@ exports.queryCount = async function () {
       max: detail.counts.max,
     }
   }
-  trans = tran_num.length || 0
+
+  trans = parseInt(tran_num / 5) || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
@@ -461,7 +461,6 @@ exports.searchMoney = async function (ctx, next) {
       account: item.user_name,
       callback: async count => {
         item.counts = count.data
-        console.log(item.counts)
         await UserModel.findOneAndUpdate({
           user_name: item.user_name,
         }, {
