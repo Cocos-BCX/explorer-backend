@@ -25,10 +25,10 @@ exports.queryCount = async function () {
   let end = moment(new Date().getTime() - 24 * 60 * 60 * 1000).toISOString()
   let start = moment(new Date().getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
   let tran_num = await transModel.find({
-    // expiration: {
-    //   $gte: "2019-06-04T16:00:00.000Z",
-    //   $lt: "2019-06-05T16:00:00.000Z",
-    // },
+    expiration: {
+      $gte: start,
+      $lt: end,
+    },
   }).count().exec()
 
   console.log("start:", start)
@@ -66,7 +66,7 @@ exports.queryCount = async function () {
     }
   }
 
-  trans = parseInt(tran_num / 5) || 0
+  trans = tran_num || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
