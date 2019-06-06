@@ -31,12 +31,12 @@ exports.queryCount = async function () {
   );
   let tran_num = await transModel.find({
     expiration: {
-      $gte: start,
-      $lt: end,
+      $gte: ISODate("2019-06-04T00:00:00Z"),
+      $lt: ISODate("2019-06-05T00:00:00Z"),
     },
   }).count().exec()
-  console.log("start:", start)
-  console.log("end  :", end)
+  console.log("start:", ISODate("2019-06-04T00:00:00Z"))
+  console.log("end  :", ISODate("2019-06-05T00:00:00Z"))
   console.log("tran_num:", tran_num)
   let tps = await blockModel
     .findOne({
