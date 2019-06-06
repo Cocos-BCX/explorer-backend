@@ -34,8 +34,8 @@ exports.queryCount = async function () {
       $gte: start,
       $lt: end,
     },
-  }).count()
-  console.log(transModel.find().count());
+  }).count().exec()
+  console.log(transModel.count());
   console.log("start:", start)
   console.log("end  :", end)
   console.log("tran_num:", tran_num)
