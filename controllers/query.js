@@ -30,10 +30,12 @@ exports.queryCount = async function () {
     24 * 60 * 60 * 1000
   );
   let tran_num = await transModel.find({
-    // expiration: {
-    //   $gte: start,
-    //   $lt: end,
-    // },
+    expiration: {
+      $gte: start,
+      $lt: end,
+    },
+  }).hint({
+    expiration: 1
   }).count().exec()
 
   console.log("start:", start)
