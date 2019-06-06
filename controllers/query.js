@@ -31,15 +31,13 @@ exports.queryCount = async function () {
   );
   let tran_num = await transModel.find({
     expiration: {
-      $gte: start,
-      $lt: end,
+      $gte: ISODate(start),
+      $lt: ISODate(end),
     },
-  })
+  }).count()
   console.log("start:", start)
   console.log("end  :", end)
-  console.log("tran_num:", tran_num.length)
-  console.log(tran_num[0])
-  console.log(tran_num[tran_num.length - 1])
+  console.log("tran_num:", tran_num)
   let tps = await blockModel
     .findOne({
       block_height: detail.block_height || 0,
@@ -72,7 +70,7 @@ exports.queryCount = async function () {
     }
   }
 
-  trans = tran_num.length || 0
+  trans = tran_num || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
