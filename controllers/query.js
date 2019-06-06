@@ -29,12 +29,18 @@ exports.queryCount = async function () {
     new Date(new Date().toLocaleDateString()).getTime() -
     24 * 60 * 60 * 1000
   );
-  let tran_num = await transModel.find({
-    expiration: {
-      $gte: start,
-      $lt: end,
-    },
-  }).count()
+  let tran_num
+  try {
+    tran_num = await transModel.find({
+      expiration: {
+        $gte: start,
+        $lt: end,
+      },
+    }).count()
+  } catch (e) {
+    console.log(e);
+    tran_num = 0
+  }
   console.log("start:", start)
   console.log("end  :", end)
   console.log("tran_num:", tran_num)
@@ -70,7 +76,7 @@ exports.queryCount = async function () {
     }
   }
 
-  trans = tran_num || 0
+  trans = tran_num
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
