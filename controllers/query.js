@@ -3,6 +3,7 @@ const blockModel = require('../models/block.js')
 const transModel = require('../models/trans.js')
 const UserModel = require('../models/user.js')
 const transferModel = require('../models/transfer.js')
+const transModel = require('../models/trans.js')
 const BlockDetailModel = require('../models/block.detail.js')
 const queryMw = require('../middlewares/query.mw.js')
 const dataShow = require('../models/data.show.js')
@@ -24,8 +25,8 @@ exports.queryCount = async function () {
   // })
   let start = util.getLastDay()
   let end = util.getToday()
-  let tran_num = await transferModel.find({
-    date: {
+  let tran_num = await transModel.find({
+    expiration: {
       $gte: start,
       $lt: end,
     },
@@ -66,6 +67,7 @@ exports.queryCount = async function () {
       max: detail.counts.max,
     }
   }
+
   trans = tran_num.length || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
