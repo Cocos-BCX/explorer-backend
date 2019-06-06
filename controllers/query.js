@@ -30,13 +30,14 @@ exports.queryCount = async function () {
     24 * 60 * 60 * 1000
   );
   let tran_num = await transModel.find({
-    expiration: {
-      $gte: new Date("2019-06-04T00:00:00Z"),
-      $lt: new Date("2019-06-05T00:00:00Z"),
-    },
+    // expiration: {
+    //   $gte: start,
+    //   $lt: end,
+    // },
   }).count().exec()
-  console.log("start:", new Date("2019-06-04T00:00:00Z"))
-  console.log("end  :", new Date("2019-06-05T00:00:00Z"))
+
+  console.log("start:", start)
+  console.log("end  :", end)
   console.log("tran_num:", tran_num)
   let tps = await blockModel
     .findOne({
