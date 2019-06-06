@@ -29,8 +29,8 @@ exports.queryCount = async function () {
   ).toLocaleDateString());
   let tran_num = await transferModel.find({
     date: {
-      $gte: start,
-      $lt: end,
+      $gte: new Date('2019/06/04'),
+      $lt: new Date('2019/06/05'),
     },
   }).count().exec()
 
