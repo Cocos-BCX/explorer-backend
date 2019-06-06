@@ -70,8 +70,8 @@ exports.queryCount = async function () {
       max: detail.counts.max,
     }
   }
-  trans = 0;
-  // trans = tran_num || 0
+
+  trans = tran_num || 0
   await BlockDetailModel.findOneAndUpdate({
     detail: 'detail',
   }, {
