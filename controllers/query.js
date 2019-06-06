@@ -22,17 +22,15 @@ exports.queryCount = async function () {
   //     nodes = result.data.nodes.length || 0
   //   }
   // })
-  let end = new Date(
-    new Date(new Date().toLocaleDateString()).getTime()
-  )
-  let start = new Date(
+  let end = new Date(new Date().toLocaleDateString())
+  let start = new Date(new Date(
     new Date(new Date().toLocaleDateString()).getTime() -
     24 * 60 * 60 * 1000
-  );
-  let tran_num = await transModel.find({
-    expiration: {
-      $gte: new Date('2019-06-04T00:00:00.000Z'),
-      $lt: new Date('2019-06-05T00:00:00.000Z'),
+  ).toLocaleDateString());
+  let tran_num = await transferModel.find({
+    date: {
+      $gte: start,
+      $lt: end,
     },
   }).count().exec()
 
