@@ -5,7 +5,7 @@ const UserModel = require('../models/user.js')
 const BlockDetailModel = require('../models/block.detail.js')
 const transferModel = require('../models/transfer.js')
 const butBlockModel = require('../models/but_block.js')
-const FailSchema = require('../models/fail')
+const FailModel = require('../models/fail')
 const query = require('./query.js')
 const moment = require('moment')
 const EventEmitter = require('events').EventEmitter
@@ -13,8 +13,9 @@ const EventEmitter = require('events').EventEmitter
 let lastestBlockNum //最新区块高度
 let currBlockHeight = 0 //当前区块高度
 let nodeErrCount = 0 //用于累计节点连续 异常次数，和 切换节点
-let failedBlockData = []
+let failedBlockData = new Map()
 let needCheckBlockData = []
+let failedUsersData = new Map()
 
 function getLastestBlockNum() {
   return lastestBlockNum
@@ -22,16 +23,6 @@ function getLastestBlockNum() {
 
 function getCurrBlockHeight() {
   return currBlockHeight
-}
-
-function getFailedBlockData() {
-  return failedBlockData
-}
-
-function setFailedBlockData(blockNum) {
-  return failedBlockData.push({
-    "block_height": blockNum
-  })
 }
 
 async function setLastestBlockNum(bn) {
@@ -119,7 +110,7 @@ async function failBlock(blockNum) {
     return
   }
 
-  setFailedBlockData(blockNum)
+  failedBlockData.set(blockNum, blockNum)
   butBlock = new butBlockModel()
   butBlock.block_height = blockNum
   butBlock.create_time = new Date()
@@ -131,47 +122,104 @@ async function failBlock(blockNum) {
  * 处理need check block data
  * */
 async function handleNeedCheckBlockData() {
-  if (!needCheckBlockData || needCheckBlockData.length <= 0) {
+  if (!needCheckBlockData && needCheckBlockData.length > 0) {
     for (var j = 0; j < needCheckBlockData.length; j++) {
       let start = needCheckBlockData[j].start
       let num = needCheckBlockData[j].num
       for (var i = start; i <= num; i++) {
         failBlock(i)
+        needCheckBlockData.splice(j, 1)
+        j--
       }
     }
   }
 }
 
 /**
+ * 处理保存用户数据错误
+ * */
+async function handleFailedUsersData() {
+  let users = await FailModel.find()
+  users.forEach((item,index,users)=>{
+    failedUsersData.set(item, '')
+  })
+
+  failedUsersData.forEach(async function(value,index,failedUsersData){
+    console.log("[handleFailedUsersData] handle falied user data:", failedUsersData.size)
+    let user = await UserModel.findOne({
+      user_name: index,
+    }).exec()
+    if (!user) {
+      await bcx.queryAccountInfo({
+        account: index,
+        callback: async result => {
+          if (result.locked || !result.data || !result.data.account) {} else {
+            //用户名作索引用
+            result.data.user_name = result.data.account.name
+            result.data.trx_ids = [{
+              trx_id: value,
+            }, ]
+
+            let userModels = new UserModel(result.data)
+            userModels.save()
+
+            await FailModel.remove({index: index}, function (error) {
+              if (error) {
+                console.error("[handleFailedUsersData] faile to remove fail, error:", error);
+              }
+            })
+
+            failedUsersData.delete(index)
+          }
+        },
+      })
+    }
+  })
+}
+
+/**
  * 处理failed block
  * */
 async function handleFailedBlockData() {
-  let failedBlockDatas = getFailedBlockData()
-  if (!failedBlockDatas || failedBlockDatas.length <= 0) {
-    failedBlockDatas = await butBlockModel.find()
-  }
+  let blocks = await butBlockModel.find()
+  blocks.forEach((item,index,blocks)=>{
+    failedBlockData.set(item.block_height, item.block_height)
+  })
 
-  if (failedBlockDatas && failedBlockDatas.length > 0) {
-    for (var j = 0; j < failedBlockDatas.length; j++) {
-      await bcx
+  failedBlockData.forEach(async function(value,index,failedBlockData) {
+    await bcx
         .queryBlock({
-          block: failedBlockDatas[j].block_height
+          block: index
         })
         .then(async result => {
-          console.log("....................................................................................")
-          console.log("入库Block(..)---222 获取到区块bN:", failedBlockDatas[j].block_height, ",code:", result.code, ",time:", new Date().toLocaleString())
-          console.log("....................................................................................")
+          console.log("入库Block(..)---222 获取到区块bN:", index, ",code:", result.code, ",time:", new Date().toLocaleString())
           if (result.code === 1) {
-            let blockModels = new blockModel(result.data)
-            blockModels.save()
-            butBlockModel.findByIdAndRemove({block_height:failedBlockDatas[j].block_height})
-            failedBlockDatas.splice(j, 1)
-            j--
-            resetNodeErrCount()
+            let block = await blockModel
+                .findOne({
+                  block_height: index,
+                })
+                .hint({
+                  block_height: 1,
+                  block_id: 1,
+                  timestamp: 1,
+                })
+                .exec()
+            if (!block) {
+              let blockModels = new blockModel(result.data)
+              blockModels.save()
+              resetNodeErrCount()
+              await butBlockModel.remove({block_height: index}, function (error) {
+                if (error) {
+                  console.error("[handleFailedBlockData] faile to remove but block, error:", error);
+                }
+              })
+            }
+            failedBlockData.delete(index)
           }
+        }).catch(async err => {
+          console.log("[handleFailedBlockData] faile to get block, error:", err.toString())
         })
-    }
-  }
+  })
 }
 
 /**
@@ -220,6 +268,7 @@ exports.syncBlockData = async function () {
     }
     await setCurrBlockHeight(ctx.block_height)
     console.log("saveData()-44444更新 detail blockNum:", ctx.block_height, "time:", new Date().toLocaleString())
+    await handleFailedUsersData()
     await handleNeedCheckBlockData()
     await handleFailedBlockData()
   }
@@ -227,9 +276,6 @@ exports.syncBlockData = async function () {
 }
 
 async function toFetchBlock(ctx, next) {
-  console.log("------------------------------------------------------------------------------------")
-  console.log("666666666666666666666666666666666666666666666666666666666666666666666666666666666666")
-  console.log("------------------------------------------------------------------------------------")
   //重复查BlockDetail表----待处理
   let currBlockHeight = getCurrBlockHeight()
   console.log("查detail最新高度---222 sub_block_height:", ctx.block_height, ",time:", new Date().toLocaleString())
@@ -555,13 +601,21 @@ async function saveUsers(users, next, realUsers) {
       if (!user) {
         await bcx.queryAccountInfo({
           account: item.id,
-          callback: async result => {
-            if (result.locked || !result.data || !result.data.account) {} else {
+          callback: (async err => {
+            failedUsersData.set(item.id, ctx.trx_id)
+            let failUser = {}
+            failUser.index = item.id
+            let failModels = new FailModel(failUser)
+            failModels.save()
+            console.log("[saveUsers] failed to save user, error:", err.toString())
+          }, async result => {
+            if (result.locked || !result.data || !result.data.account) {
+            } else {
               //用户名作索引用
               result.data.user_name = result.data.account.name
               result.data.trx_ids = [{
                 trx_id: ctx.trx_id,
-              }, ]
+              },]
               //数组的话最后清除
               if (index === ctx.users.length - 1) {
                 ctx.trx_id = null
@@ -572,19 +626,12 @@ async function saveUsers(users, next, realUsers) {
                 ctx.create_time = null
               }
 
-              //查询用户余额
-              await bcx.queryAccountAllBalances({
-                unit: '',
-                account: item.id,
-                callback: async count => {
-                  result.data.counts = count.data
-                },
-              })
               // realUsers.push(result.data)
               let userModels = new UserModel(result.data)
               userModels.save()
+              console.log("[saveUsers] save user success...")
             }
-          },
+          })
         })
       }
     })
@@ -598,64 +645,16 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
     console.log("saveData()-2222.5555入库--前-----start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:", new Date().toLocaleString())
     blockModels.collection.insert(blocks, onInsertBlocks)
     console.log("saveData()-3333入库成功-start blockNum:", blockNum, " end blockNum:", (blockNum + blocks.length), "time:", new Date().toLocaleString())
-    // await setCurrBlockHeight((blockNum + blocks.length))
-    // console.log("saveData()-44444更新detail blockNum:", (blockNum + blocks.length), "time:",  new Date().toLocaleString())
-    //区块去重
-    // await query.subscribeToBlocks(ctx, next)
   }
 }
 
 //保存数据
 async function saveData(blocks, ctx, next, blockNum) {
-
 	console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
 	await existBlock(blocks, blockNum)
 	saveTransactions(blocks, ctx, next, blockNum)
 	saveBlocks(blocks, ctx, next, blockNum)
 	blocks = null
-}
-
-//用户表
-exports.setUser = async function (ctx, next) {
-  await ctx.users.map(async (item, index) => {
-    let user = await UserModel.findOne({
-      user_name: item.id,
-    }).exec()
-    if (!user) {
-      await bcx.queryAccountInfo({
-        account: item.id,
-        callback: async result => {
-          if (result.locked || !result.data || !result.data.account) {} else {
-            //用户名作索引用
-            result.data.user_name = result.data.account.name
-            result.data.trx_ids = [{
-              trx_id: ctx.trx_id,
-            }, ]
-            //数组的话最后清除
-            if (index === ctx.users.length - 1) {
-              ctx.trx_id = null
-            }
-            //有时间就存上
-            if (ctx.create_time) {
-              result.data.create_time = moment(ctx.create_time)
-              ctx.create_time = null
-            }
-
-            //查询用户余额
-            await bcx.queryAccountAllBalances({
-              unit: '',
-              account: item.id,
-              callback: async count => {
-                result.data.counts = count.data
-              },
-            })
-            const user = new UserModel(result.data)
-            await user.save()
-          }
-        },
-      })
-    }
-  })
 }
 
 //累加 节点出错次数

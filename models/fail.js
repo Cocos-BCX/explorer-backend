@@ -10,6 +10,11 @@ const FailSchema = new Schema({
   },
 })
 
+FailSchema.index({
+  'index': 1,
+}, {
+  sparse: true
+});
 
 FailSchema.set('toJSON', {
   getters: true,
