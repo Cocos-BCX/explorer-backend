@@ -140,11 +140,11 @@ async function handleNeedCheckBlockData() {
  * */
 async function handleFailedUsersData() {
   let users = await FailModel.find()
-  users.forEach((item,index,users)=>{
+  users.forEach((item, index, users) => {
     failedUsersData.set(item, '')
   })
 
-  failedUsersData.forEach(async function(value,index,failedUsersData){
+  failedUsersData.forEach(async function (value, index, failedUsersData) {
     console.log("[handleFailedUsersData] handle falied user data:", failedUsersData.size)
     let user = await UserModel.findOne({
       user_name: index,
@@ -163,7 +163,9 @@ async function handleFailedUsersData() {
             let userModels = new UserModel(result.data)
             userModels.save()
 
-            await FailModel.remove({index: index}, function (error) {
+            await FailModel.remove({
+              index: index
+            }, function (error) {
               if (error) {
                 console.error("[handleFailedUsersData] faile to remove fail, error:", error);
               }
@@ -182,43 +184,45 @@ async function handleFailedUsersData() {
  * */
 async function handleFailedBlockData() {
   let blocks = await butBlockModel.find()
-  blocks.forEach((item,index,blocks)=>{
+  blocks.forEach((item, index, blocks) => {
     failedBlockData.set(item.block_height, item.block_height)
   })
 
-  failedBlockData.forEach(async function(value,index,failedBlockData) {
+  failedBlockData.forEach(async function (value, index, failedBlockData) {
     await bcx
-        .queryBlock({
-          block: index
-        })
-        .then(async result => {
-          console.log("入库Block(..)---222 获取到区块bN:", index, ",code:", result.code, ",time:", new Date().toLocaleString())
-          if (result.code === 1) {
-            let block = await blockModel
-                .findOne({
-                  block_height: index,
-                })
-                .hint({
-                  block_height: 1,
-                  block_id: 1,
-                  timestamp: 1,
-                })
-                .exec()
-            if (!block) {
-              let blockModels = new blockModel(result.data)
-              blockModels.save()
-              resetNodeErrCount()
-              await butBlockModel.remove({block_height: index}, function (error) {
-                if (error) {
-                  console.error("[handleFailedBlockData] faile to remove but block, error:", error);
-                }
-              })
-            }
-            failedBlockData.delete(index)
+      .queryBlock({
+        block: index
+      })
+      .then(async result => {
+        console.log("入库Block(..)---222 获取到区块bN:", index, ",code:", result.code, ",time:", new Date().toLocaleString())
+        if (result.code === 1) {
+          let block = await blockModel
+            .findOne({
+              block_height: index,
+            })
+            .hint({
+              block_height: 1,
+              block_id: 1,
+              timestamp: 1,
+            })
+            .exec()
+          if (!block) {
+            let blockModels = new blockModel(result.data)
+            blockModels.save()
+            resetNodeErrCount()
+            await butBlockModel.remove({
+              block_height: index
+            }, function (error) {
+              if (error) {
+                console.error("[handleFailedBlockData] faile to remove but block, error:", error);
+              }
+            })
           }
-        }).catch(async err => {
-          console.log("[handleFailedBlockData] faile to get block, error:", err.toString())
-        })
+          failedBlockData.delete(index)
+        }
+      }).catch(async err => {
+        console.log("[handleFailedBlockData] faile to get block, error:", err.toString())
+      })
   })
 }
 
@@ -423,11 +427,11 @@ async function forkWork(startNum, endNum, next) {
 
 async function fetchBlock(ctx, next) {
 
-	let resultBlocks = []
-	for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
-		await exports.Block(ctx, next, i + 1, resultBlocks)	//同步下一个区块
-	}
-	await saveData(resultBlocks, ctx, next, ctx.blcok_length)
+  let resultBlocks = []
+  for (var i = ctx.blcok_length; i < ctx.block_height; i++) {
+    await exports.Block(ctx, next, i + 1, resultBlocks) //同步下一个区块
+  }
+  await saveData(resultBlocks, ctx, next, ctx.blcok_length)
 }
 
 //入库block区块
@@ -460,28 +464,28 @@ exports.Block = async function (ctx, next, length, resultBlocks) { //length:本�
 }
 
 //检查区块是否存在
-async function existBlock(blocks, blockNum){
+async function existBlock(blocks, blockNum) {
 
-	for (var i = 0; i < blocks.length; i++) {
-		if (blocks[i]) {
-			let block = await blockModel
-				.findOne({
-					block_height: blocks[i].block_height,
-				})
-				.hint({
-					block_height: 1,
-					block_id: 1,
-					timestamp: 1,
-				})
-				.exec()
-			console.log("saveData()-1111入库前检查区块是否存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
-			if (block) {
-				console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
-				blocks.splice(i, 1)
-				i--
-			}
-		}
-	}
+  for (var i = 0; i < blocks.length; i++) {
+    if (blocks[i]) {
+      let block = await blockModel
+        .findOne({
+          block_height: blocks[i].block_height,
+        })
+        .hint({
+          block_height: 1,
+          block_id: 1,
+          timestamp: 1,
+        })
+        .exec()
+      console.log("saveData()-1111入库前检查区块是否存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
+      if (block) {
+        console.log("saveData()-1111.555--入库前检查  区块已存在,bN:", blocks[i].block_height, ",time:", new Date().toLocaleString())
+        blocks.splice(i, 1)
+        i--
+      }
+    }
+  }
 }
 
 //保存交易
@@ -609,13 +613,12 @@ async function saveUsers(users, next, realUsers) {
             failModels.save()
             console.log("[saveUsers] failed to save user, error:", err.toString())
           }, async result => {
-            if (result.locked || !result.data || !result.data.account) {
-            } else {
+            if (result.locked || !result.data || !result.data.account) {} else {
               //用户名作索引用
               result.data.user_name = result.data.account.name
               result.data.trx_ids = [{
                 trx_id: ctx.trx_id,
-              },]
+              }, ]
               //数组的话最后清除
               if (index === ctx.users.length - 1) {
                 ctx.trx_id = null
@@ -650,11 +653,11 @@ async function saveBlocks(blocks, ctx, next, blockNum) {
 
 //保存数据
 async function saveData(blocks, ctx, next, blockNum) {
-	console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
-	await existBlock(blocks, blockNum)
-	saveTransactions(blocks, ctx, next, blockNum)
-	saveBlocks(blocks, ctx, next, blockNum)
-	blocks = null
+  console.log("saveData()-0000 进入--bN:", blockNum, ", num:", blocks.length, ",time:", new Date().toLocaleString())
+  await existBlock(blocks, blockNum)
+  saveTransactions(blocks, ctx, next, blockNum)
+  saveBlocks(blocks, ctx, next, blockNum)
+  blocks = null
 }
 
 //累加 节点出错次数
