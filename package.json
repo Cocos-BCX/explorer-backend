@@ -10,6 +10,7 @@
     "fix-memory-limit": "cross-env LIMIT=6144 increase-memory-limit"
   },
   "dependencies": {
+    "axios": "^0.18.1",
     "bcl": "^1.0.0",
     "constants": "0.0.2",
     "cross-env": "^5.2.0",
@@ -28,14 +29,17 @@
     "koa-views": "^5.2.1",
     "koa2": "^2.0.0-alpha.7",
     "koa2-cors": "^2.0.6",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
+    "lodash.merge": "^4.6.2",
     "moment": "^2.23.0",
     "mongoose": "^5.3.16",
     "monk": "^6.0.6",
+    "parsejson": "0.0.3",
     "pm2": "^3.2.3",
     "pug": "^2.0.0-rc.1",
     "save": "^2.3.3",
     "socket.io": "^2.2.0",
+    "uglify-js": "^2.6.0",
     "websocket": "^1.0.28",
     "worker-threads-pool": "^2.0.0"
   },
