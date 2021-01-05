@@ -10,7 +10,7 @@
     "fix-memory-limit": "cross-env LIMIT=6144 increase-memory-limit"
   },
   "dependencies": {
-    "axios": "^0.18.1",
+    "axios": "^0.21.1",
     "bcl": "^1.0.0",
     "constants": "0.0.2",
     "cross-env": "^5.2.0",
